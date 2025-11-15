@@ -10,13 +10,14 @@ import { Sections } from "./common/variables/Sections";
 
 function App() {
   const [analysis, setAnalysis] = useState<string>('');
+  const [progress, setProgress] = useState<string>('');
   const [jobId, setJobId] = useState<string>('');
   const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
   const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
   const [selectedOlderFilingDate, setSelectedOlderFilingDate] = useState<string>('');
   const [selectedNewerFilingDate, setSelectedNewerFilingDate] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
-  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [selectedSection, setSelectedSection] = useState<string>("");
 
   const handleSubmit = async () => {
     if(!selectedOlderFilingDate || !selectedNewerFilingDate) return;
@@ -26,7 +27,7 @@ function App() {
     const stock2 = available10KFilings.find(filing=>filing.filingDate === selectedNewerFilingDate);
     const stockData1 = {cik: selectedStock!.cik_str, accessionNumber: stock1!.accessionNumber, primaryDocument: stock1!.primaryDocument};
     const stockData2 = {cik: selectedStock!.cik_str, accessionNumber: stock2!.accessionNumber, primaryDocument: stock2!.primaryDocument};
-    const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSections);
+    const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSection);
 
     if(resp.ok){
       const jobId = await resp.json();
@@ -36,7 +37,7 @@ function App() {
 
   useEffect(()=>{
     const poll = async (attempt: number) => {
-      if (attempt >= 45) {
+      if (attempt >= 90) {
         setAnalysis('Analysis timed out. Please try again later.');
         setAwaitingAnalysis(false);
         return;
@@ -54,6 +55,9 @@ function App() {
         setAnalysis(job.result || 'Comparison failed.');
         setAwaitingAnalysis(false);
         return;
+      }
+      if(job.progress){
+        setProgress(job.progress);
       }
 
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -156,8 +160,8 @@ function App() {
                 <label className="block text-xs font-medium text-gray-700 mb-2">Section to Analyze</label>
                 <select 
                   className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
-                  value={selectedSections[0] || ''} 
-                  onChange={e => setSelectedSections(e.target.value ? [e.target.value] : [])}
+                  value={selectedSection || ''} 
+                  onChange={e => setSelectedSection(e.target.value)}
                 >
                   <option value="">Select a section</option>
                   {Sections && Object.values(Sections).map((section) => (
@@ -172,7 +176,7 @@ function App() {
               <div>
                 <FinDiffButton 
                   onClick={handleSubmit} 
-                  disabled={!selectedOlderFilingDate || !selectedNewerFilingDate || awaitingAnalysis}
+                  disabled={!selectedOlderFilingDate || !selectedNewerFilingDate || awaitingAnalysis || !selectedSection}
                 >
                   Compare Filings
                 </FinDiffButton>
@@ -194,6 +198,9 @@ function App() {
                 </div>
                 :
                 <MarkDownDisplay markdown={analysis} />
+              }
+              {awaitingAnalysis &&
+                <p>{progress}</p>
               }
             </div>
           )}

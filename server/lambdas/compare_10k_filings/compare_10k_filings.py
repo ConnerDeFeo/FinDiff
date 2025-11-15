@@ -14,11 +14,11 @@ def compare_10k_filings(event, context):
     try:
         stock1 = body['stock1']  # Expecting {accessionNumber, cik, primaryDocument}
         stock2 = body['stock2']  # Expecting {accessionNumber, cik, primaryDocument}
-        sections = body['sections'] # Sections to compare
+        section = body['section'] # Section to compare
 
-        if not sections:
-            raise ValueError("Sections parameter is required")
-    
+        if not section:
+            raise ValueError("Section parameter is required")
+
         # Create job ID
         job_id = str(uuid.uuid4())
         
@@ -36,7 +36,7 @@ def compare_10k_filings(event, context):
                 'jobId': job_id,
                 'stock1': stock1,
                 'stock2': stock2,
-                'sections': sections
+                'section': section
             })
         )
         

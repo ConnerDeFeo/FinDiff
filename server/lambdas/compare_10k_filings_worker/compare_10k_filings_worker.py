@@ -3,25 +3,26 @@ import re
 from bs4 import BeautifulSoup
 from dynamo import update_item
 import boto3
+from s3 import put_object, get_object, exists
+import asyncio
 
-MAX_TOKENS = 100000
+MAX_SECTION_TOKENS = 100000
 OUTPUT_TOKENS = 8000
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 # Fetch 10-K filing from SEC EDGAR
-def fetch_10k_from_sec(url: str):
+async def fetch_10k_from_sec(url):
     headers = {
         "User-Agent": "Conner DeFeo ninjanerozz@gmail.com"
     }
 
-    with httpx.Client() as client:
-        response = client.get(url, headers=headers, follow_redirects=True)
-
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers, follow_redirects=True)
         if response.status_code == 200:
             return response.text
         else:
             return None
 
-def parse_html_to_text(html_content, requested_sections):
+def parse_html_to_text(html_content, requested_section):
     """
     Extract key sections from a 10-K filing
     """
@@ -71,8 +72,6 @@ def parse_html_to_text(html_content, requested_sections):
         raise ValueError("Could not find the Business section in the filing.")
     currentMatch = prev[0] if len(prev) == 1 else prev[1] # ignore heading
     currentTitle = "business"
-    sections = {}
-    tokens = 0
     for key, pattern in section_patterns.items():
         section_matches = list(re.finditer(pattern, full_text, re.IGNORECASE))
         # Older fililngs do not have certain sections
@@ -80,20 +79,16 @@ def parse_html_to_text(html_content, requested_sections):
             print(f"Section {key} not found in filing.")
             continue
         section_match = section_matches[0] if len(section_matches) == 1 else section_matches[-1]  # ignore all but last finding
-        if currentTitle in requested_sections: 
+        if currentTitle == requested_section: 
             start_pos = currentMatch.end()
             end_pos = section_match.start()
             if start_pos >= end_pos:
                 continue # skip invalid sections
             section_text = full_text[start_pos:end_pos].strip()
-            sections[currentTitle] = section_text
-            tokens += len(section_text) / 4  # rough estimate
+            return section_text, len(section_text) / 4
 
         currentTitle, currentMatch = key, section_match
-
-    if not sections:
-        raise ValueError("Could not find any sections in the filing.")
-    return sections, tokens
+    raise ValueError(f"Requested section '{requested_section}' not found in filing.")
 
 def extract_text_from_bedrock_response(response):
     content = response["output"]["message"]["content"]
@@ -105,12 +100,12 @@ def extract_text_from_bedrock_response(response):
             break
     return raw_text 
 
-def summarize_sections(text, text_tokens, section):
-    if text_tokens > MAX_TOKENS:
+async def summarize_section(text, text_tokens, section, summary_key):
+    if text_tokens > MAX_SECTION_TOKENS:
         midway = len(text) // 2
-        first_half = text[:midway+200]
-        second_half = text[midway-200:]
-        response = f"{summarize_sections(first_half, len(first_half) / 4, section)}\n\n{summarize_sections(second_half, len(second_half) / 4, section)}"
+        first_half = text[:midway+100]
+        second_half = text[midway-100:]
+        response = f"{await summarize_section(first_half, len(first_half) / 4, section, summary_key)}\n\n{await summarize_section(second_half, len(second_half) / 4, section, summary_key)}"
 
     else:
         response = bedrock.converse(
@@ -120,8 +115,12 @@ def summarize_sections(text, text_tokens, section):
                     "role": "user", 
                     "content": [{"text": 
                         f"""
-                            You are a value investor assistant summarizing chunks from a 10-K filing for the {section} section.
-                            Your goal is to return a concise summary of everything in the following portion of the section.
+                            Create a detailed summary of this {section} section chunk from a 10K filing. 
+                            Preserve ALL key facts, financial figures, risks, metrics, and business 
+                            details. Do NOT shorten aggressively. Write a concise, comprehensive 
+                            summary that retains all information in an organized form. 
+                            This summary should be nearly lossless and allow another AI to 
+                            reconstruct any part of the original content.
 
                             Section Text:
                             {text}
@@ -129,12 +128,30 @@ def summarize_sections(text, text_tokens, section):
                     }]
                 },
             ],
-            inferenceConfig={"maxTokens": int(OUTPUT_TOKENS/2), "temperature": 0}
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
         )
         response = extract_text_from_bedrock_response(response)
+        put_object(summary_key, response.encode('utf-8'))
     return response
 
-def compare_10k_filings_worker(event, context):
+async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, section: str) -> str:
+    raw_text_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}.txt"
+    summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
+    if exists(summary_key):
+        return get_object(summary_key).decode('utf-8')
+    url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primaryDoc}"
+    doc = await fetch_10k_from_sec(url)
+    if not doc:
+        raise ValueError("Could not fetch 10-K filing from SEC.")
+    text, tokens = parse_html_to_text(doc, section)
+    summarization = await summarize_section(text, tokens, section, summary_key)
+    if tokens > MAX_SECTION_TOKENS:
+        text = summarization
+    put_object(raw_text_key, text.encode('utf-8'))
+    print("COMPLETED", section)
+    return summarization
+
+async def compare_10k_filings_worker_async(event, context):
     # Helper to update job status
     def update_job_status(result, status):
         update_item(
@@ -147,67 +164,79 @@ def compare_10k_filings_worker(event, context):
                 ':result': result
             }
         )
+
+    def update_job_progress(progress):
+        update_item(
+            'comparison_jobs',
+            key={'job_id': job_id},
+            update_expression='SET #progress = :progress',
+            expression_attribute_names={'#progress': 'progress'},
+            expression_attribute_values={':progress': progress}
+        )
+
     try:
         stock1 = event['stock1']
         stock2 = event['stock2']
         job_id = event['jobId']
-        sections = event['sections']
+        section = event['section']
 
-        url1 = f"https://www.sec.gov/Archives/edgar/data/{stock1['cik']}/{stock1['accessionNumber'].replace('-','')}/{stock1['primaryDocument']}"
-        url2 = f"https://www.sec.gov/Archives/edgar/data/{stock2['cik']}/{stock2['accessionNumber'].replace('-','')}/{stock2['primaryDocument']}"
+        cik1 = stock1['cik']
+        accession1 = stock1['accessionNumber']
+        accession1 = accession1.replace('-', '')
+        primaryDoc1 = stock1['primaryDocument']
 
-        # 1. Fetch both 10-Ks
-        old = fetch_10k_from_sec(url1)
-        new = fetch_10k_from_sec(url2)
-        if not old or not new:
-            # Update status
-            update_job_status("Failed to fetch one or both filings.", "FAILED")
-            return
-        if stock1['cik'] != stock2['cik']:
+        cik2 = stock2['cik']
+        accession2 = stock2['accessionNumber']
+        accession2 = accession2.replace('-', '')
+        primaryDoc2 = stock2['primaryDocument']
+
+        if cik1 != cik2:
             update_job_status("The two filings belong to different companies (CIKs do not match).", "FAILED")
             return
-        old_text, old_tokens = parse_html_to_text(old, set(sections))
-        new_text, new_tokens = parse_html_to_text(new, set(sections))
-        tokens = old_tokens + new_tokens
 
-        if tokens > MAX_TOKENS:
-            old_text = summarize_sections(old_text, old_tokens, sections[0])
-            new_text = summarize_sections(new_text, new_tokens, sections[0])
-        
-        try:
-            response = bedrock.converse(
-                modelId = "openai.gpt-oss-120b-1:0",
-                messages=[
-                    {
-                        "role": "user", 
-                        "content": [{"text": 
-                            f"""
-                                You are a value investor analyzing 10-K changes for certain sections.
-                                Your goal is to return a marked-down formatted summary of key insights from the changes between the two filings.
+        update_job_progress("Fetching and analyzing sections from filings...")
+        old_text, new_text = await asyncio.gather(
+            get_10k_section_async(cik1, accession1, primaryDoc1, section),
+            get_10k_section_async(cik2, accession2, primaryDoc2, section)
+        )
 
-                                RULES:
-                                - Separate insights by section, with a heading (h2) for each section
-                                - If a section has no significant changes, state "No significant changes"
-                                - Skip administrative updates (dates, formatting, minor legal updates)
-                                - Give bullet points for each insight
-                                - Keep bullet points as concise as possible.
+        if not old_text or not new_text:
+            update_job_status("Could not extract the requested section from one or both filings.", "FAILED")
+            return
+        update_job_progress("Compareing sections and generating insights...")
+        response = bedrock.converse(
+            modelId = "openai.gpt-oss-120b-1:0",
+            messages=[
+                {
+                    "role": "user", 
+                    "content": [{"text": 
+                        f"""
+                            You are a value investor analyzing 10-K changes for certain sections.
+                            Your goal is to return a marked-down formatted summary of key insights from the changes between the two filings.
 
-                                Old Filing Section: 
-                                {old_text}
+                            RULES:
+                            - Separate insights by section, with a heading (h2) for each section
+                            - If a section has no significant changes, state "No significant changes"
+                            - Skip administrative updates (dates, formatting, minor legal updates)
+                            - Give bullet points for each insight
+                            - Keep bullet points as concise as possible.
 
-                                New Filing Section:
-                                {new_text}
-                            """
-                        }]
-                    },
-                ],
-                inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
-            )
-            raw_text = extract_text_from_bedrock_response(response)
-            update_job_status(raw_text, "COMPLETED")
-        except Exception as e:
-            print(f"Error calling Bedrock: {str(e)}")
-            update_job_status(f"Too many changes were detected for analysis. Please narrow your selection.", "FAILED")
+                            Old Filing {section} Section: 
+                            {old_text}
+
+                            New Filing {section} Section:
+                            {new_text}
+                        """
+                    }]
+                },
+            ],
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+        )
+        raw_text = extract_text_from_bedrock_response(response)
+        update_job_status(raw_text, "COMPLETED")
     except Exception as e:
         print(f"Error fetching filings: {str(e)}")
         update_job_status(f"Internal Server Error: {str(e)}", "FAILED")
+
+def compare_10k_filings_worker(event, context):
+    return asyncio.run(compare_10k_filings_worker_async(event, context))

@@ -188,7 +188,7 @@ resource "aws_lambda_function" "lambdas" {
   runtime          = "python3.12"
   filename         = data.archive_file.lambda_archives[each.key].output_path
   source_code_hash = data.archive_file.lambda_archives[each.key].output_base64sha256
-  timeout          = 120
+  timeout          = 180
   memory_size      = 512
 
   layers           = [aws_lambda_layer_version.user_auth.arn, aws_lambda_layer_version.dynamo.arn, aws_lambda_layer_version.s3.arn]
