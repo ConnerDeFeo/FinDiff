@@ -16,10 +16,12 @@ function App() {
   const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
   const [selectedOlderFilingDate, setSelectedOlderFilingDate] = useState<string>('');
   const [selectedNewerFilingDate, setSelectedNewerFilingDate] = useState<string>('');
+  const [selectedSingleFilingDate, setSelectedSingleFilingDate] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
   const [selectedSection, setSelectedSection] = useState<string>("");
+  const [analysisMode, setAnalysisMode] = useState<'compare' | 'single'>('compare');
 
-  const handleSubmit = async () => {
+  const handleCompareSubmit = async () => {
     if(!selectedOlderFilingDate || !selectedNewerFilingDate) return;
     setAnalysis('');
 
@@ -35,6 +37,28 @@ function App() {
     }
   }
 
+  const handleSingleAnalysisSubmit = async () => {
+    if(!selectedSingleFilingDate) return;
+    setAnalysis('');
+
+    const filing = available10KFilings.find(f=>f.filingDate === selectedSingleFilingDate);
+    const stockData = {cik: selectedStock!.cik_str, accessionNumber: filing!.accessionNumber, primaryDocument: filing!.primaryDocument};
+    const resp = await secService.analyze10KSection(stockData, selectedSection);
+
+    if(resp.ok){
+      const jobId = await resp.json();
+      setJobId(jobId);
+    }
+  }
+
+  const handleSubmit = () => {
+    if(analysisMode === 'compare') {
+      handleCompareSubmit();
+    } else {
+      handleSingleAnalysisSubmit();
+    }
+  }
+
   useEffect(()=>{
     const poll = async (attempt: number) => {
       if (attempt >= 90) {
@@ -43,16 +67,20 @@ function App() {
         return;
       }
       setAwaitingAnalysis(true);
-      const resp = await secService.getComparisonStatus(jobId);
+      
+      const resp = analysisMode === 'compare' 
+        ? await secService.getComparisonStatus(jobId)
+        : await secService.get10KAnalysisStatus(jobId);
+        
       if(!resp.ok) {
-        setAnalysis('Error fetching comparison status.');
+        setAnalysis('Error fetching analysis status.');
         setAwaitingAnalysis(false);
         return;
       }
       const job =  await resp.json();
 
       if (job.status === 'COMPLETED' || job.status === 'FAILED') {
-        setAnalysis(job.result || 'Comparison failed.');
+        setAnalysis(job.result || 'Analysis failed.');
         setAwaitingAnalysis(false);
         return;
       }
@@ -67,7 +95,7 @@ function App() {
       poll(0);
       setJobId('');
     }
-  }, [jobId]);
+  }, [jobId, analysisMode]);
 
   const fetchAvailable10KFilings = async (cik:string) => {
     const resp = await secService.getAvailable10KFilings(cik);
@@ -118,9 +146,39 @@ function App() {
                 </div>
               </div>
 
+              {/* Analysis Mode Toggle */}
+              <div className="pb-6 border-b border-gray-200">
+                <label className="block text-xs font-medium text-gray-700 mb-2">Analysis Mode</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAnalysisMode('compare')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      analysisMode === 'compare'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Compare Filings
+                  </button>
+                  <button
+                    onClick={() => setAnalysisMode('single')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      analysisMode === 'single'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Single Analysis
+                  </button>
+                </div>
+              </div>
+
               {/* Filing Selection */}
               <div className="pb-6 border-b border-gray-200">
-                <h3 className="text-sm font-semibold findiff-secondary-blue mb-4">Select Filings to Compare</h3>
+                <h3 className="text-sm font-semibold findiff-secondary-blue mb-4">
+                  {analysisMode === 'compare' ? 'Select Filings to Compare' : 'Select Filing to Analyze'}
+                </h3>
+                {analysisMode === 'compare' ? (
                 <div className="flex flex-row jsutify-between gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-2">Older Filing</label>
@@ -153,6 +211,23 @@ function App() {
                     </select>
                   </div>
                 </div>
+                ) : (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Select Filing</label>
+                  <select 
+                    className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
+                    value={selectedSingleFilingDate} 
+                    onChange={e => setSelectedSingleFilingDate(e.target.value)}
+                  >
+                    <option value="" className="cursor-pointer">Select a filing</option>
+                    {available10KFilings.map(filing => (
+                      <option key={filing.accessionNumber} value={filing.filingDate} className="cursor-pointer">
+                        {filing.filingDate.split('-')[0]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                )}
               </div>
 
               {/* Sections Selection */}
@@ -172,13 +247,17 @@ function App() {
                 </select>
               </div>
 
-              {/* Compare Button */}
+              {/* Action Button */}
               <div>
                 <FinDiffButton 
                   onClick={handleSubmit} 
-                  disabled={!selectedOlderFilingDate || !selectedNewerFilingDate || awaitingAnalysis || !selectedSection}
+                  disabled={
+                    awaitingAnalysis || !selectedSection ||
+                    (analysisMode === 'compare' && (!selectedOlderFilingDate || !selectedNewerFilingDate)) ||
+                    (analysisMode === 'single' && !selectedSingleFilingDate)
+                  }
                 >
-                  Compare Filings
+                  {analysisMode === 'compare' ? 'Compare Filings' : 'Analyze Filing'}
                 </FinDiffButton>
               </div>
             </div>
@@ -210,7 +289,12 @@ function App() {
                 <svg className="mx-auto h-24 w-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p className="text-lg">Select filings to compare and view analysis here</p>
+                <p className="text-lg">
+                  {analysisMode === 'compare' 
+                    ? 'Select filings to compare and view analysis here'
+                    : 'Select a filing to analyze and view results here'
+                  }
+                </p>
               </div>
             </div>
           )}

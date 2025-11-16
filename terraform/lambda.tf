@@ -20,6 +20,18 @@ locals {
     "get_comparison_status" = {
       source_dir  = "../server/lambdas/get_comparison_status"
       output_path = "../server/lambdas/zips/get_comparison_status.zip"
+    },
+    "analyze_10k_section_worker" = {
+      source_dir  = "../server/lambdas/analyze_10k_section_worker"
+      output_path = "../server/lambdas/zips/analyze_10k_section_worker.zip"
+    },
+    "analyze_10k_section" = {
+      source_dir  = "../server/lambdas/analyze_10k_section"
+      output_path = "../server/lambdas/zips/analyze_10k_section.zip"
+    },
+    "get_10k_analysis_status" = {
+      source_dir  = "../server/lambdas/get_10k_analysis_status"
+      output_path = "../server/lambdas/zips/get_10k_analysis_status.zip"
     }
   }
 }
@@ -134,7 +146,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = aws_dynamodb_table.comparison_jobs.arn
+        Resource = [aws_dynamodb_table.comparison_jobs.arn, aws_dynamodb_table.single_section_analysis_jobs.arn]
       }
     ]
   })

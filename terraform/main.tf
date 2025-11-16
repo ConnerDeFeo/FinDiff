@@ -15,6 +15,23 @@ resource "aws_dynamodb_table" "comparison_jobs" {
   }
 }
 
+# Create DynamoDB table for single section analysis jobs
+resource "aws_dynamodb_table" "single_section_analysis_jobs" {
+  name         = "single_section_analysis_jobs"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "job_id"
+
+  attribute {
+    name = "job_id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "FinDiff Single Section Analysis Jobs"
+    Environment = "prod"
+  }
+}
+
 # Create s3 bucket to store company filings
 resource "aws_s3_bucket" "company_filings" {
   bucket = "findiff-bucket-prod"
