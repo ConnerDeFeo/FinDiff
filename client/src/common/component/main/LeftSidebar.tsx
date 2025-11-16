@@ -170,6 +170,7 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                             if (section) setSelectedSection(section);
                         }}
                         placeholder="Select a section"
+                        openUpward
                     />
                 </div>
 

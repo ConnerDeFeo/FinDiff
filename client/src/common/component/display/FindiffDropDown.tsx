@@ -8,6 +8,7 @@ interface FindiffDropDownProps {
   label?: string;
   className?: string;
   disabled?: boolean;
+  openUpward?: boolean;
 }
 
 const FindiffDropDown = ({
@@ -17,7 +18,8 @@ const FindiffDropDown = ({
   placeholder = 'Select an option',
   label,
   className = '',
-  disabled = false
+  disabled = false,
+  openUpward
 }: FindiffDropDownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,7 +107,9 @@ const FindiffDropDown = ({
 
         {/* Dropdown menu */}
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-500 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className={`absolute z-50 w-full bg-white border-2 border-blue-500 rounded-lg shadow-lg max-h-60 overflow-hidden ${
+            openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}>
             {/* Search input */}
             <div className="p-2 border-b border-gray-200">
               <input
