@@ -2,6 +2,6 @@
     "extraPaths": [
         "Server/layers/user_auth/python",
         "Server/layers/dynamo/python",
-        "Server/layers/s3/python"
+        "Server/layers/filings/python"
     ]
 }

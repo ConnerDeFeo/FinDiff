@@ -13,21 +13,32 @@ def get_available_10k_filings(event, context):
         }
 
         cik_padded = cik.zfill(10)
-        url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+        ten_k_filings = []
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(f"https://data.sec.gov/submissions/CIK{cik_padded}.json", headers=headers)
         data = response.json()
 
-        filings = data['filings']['recent']
-        ten_k_filings = []
-        for i, form in enumerate(filings['form']):
-            if form == '10-K':
-                filing_info = {
-                    'accessionNumber': filings['accessionNumber'][i],
-                    'filingDate': filings['filingDate'][i],
-                    'primaryDocument': filings['primaryDocument'][i],
-                }
-                ten_k_filings.append(filing_info)
+        filings = data.get('filings', {})
+        recent = filings.get('recent', {})
+        def append_10k_filings(data):
+            for i, form in enumerate(data.get('form', [])):
+                if form == '10-K':
+                    filing_info = {
+                        'accessionNumber': data['accessionNumber'][i],
+                        'filingDate': data['filingDate'][i],
+                        'primaryDocument': data['primaryDocument'][i],
+                    }
+                    ten_k_filings.append(filing_info)
+        append_10k_filings(recent)
+
+        
+        if "files" in filings:
+            for next_file in filings["files"]:
+                if "name" in next_file:
+                    file_response = requests.get(f"https://data.sec.gov/submissions/{next_file['name']}", headers=headers)
+                    file_data = file_response.json()
+                    append_10k_filings(file_data or {})
+                    
         return {
             "statusCode": 200,
             "body": json.dumps(ten_k_filings),

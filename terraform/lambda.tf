@@ -24,25 +24,29 @@ locals {
   }
 }
 
-# Data for user auth layer
+# Data layers
 data "archive_file" "user_auth_layer" {
   type        = "zip"
   source_dir  = "${path.module}/../server/layers/user_auth/"
   output_path = "${path.module}/../server/layers/user_auth/user_auth.zip"
 }
 
-# Data for user dynamodb layer
 data "archive_file" "dynamo_layer" {
   type        = "zip"
   source_dir  = "${path.module}/../server/layers/dynamo/"
   output_path = "${path.module}/../server/layers/dynamo/dynamodb.zip"
 }
 
-# Data for s3 layer
-data "archive_file" "s3_layer" {
+data "archive_file" "utils_layer" {
   type        = "zip"
-  source_dir  = "${path.module}/../server/layers/s3/"
-  output_path = "${path.module}/../server/layers/s3/s3.zip"
+  source_dir  = "${path.module}/../server/layers/utils/"
+  output_path = "${path.module}/../server/layers/utils/utils.zip"
+}
+
+data "archive_file" "filings_layer" {
+  type        = "zip"
+  source_dir  = "${path.module}/../server/layers/filings/"
+  output_path = "${path.module}/../server/layers/filings/filings.zip"
 }
 
 resource "aws_lambda_layer_version" "user_auth" {
@@ -59,12 +63,20 @@ resource "aws_lambda_layer_version" "dynamo" {
   source_code_hash = data.archive_file.dynamo_layer.output_base64sha256
 }
 
-resource "aws_lambda_layer_version" "s3" {
-  filename         = data.archive_file.s3_layer.output_path
-  layer_name       = "s3"
+resource "aws_lambda_layer_version" "utils" {
+  filename         = data.archive_file.utils_layer.output_path
+  layer_name       = "utils"
   compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.s3_layer.output_base64sha256
+  source_code_hash = data.archive_file.utils_layer.output_base64sha256
 }
+
+resource "aws_lambda_layer_version" "filings" {
+  filename         = data.archive_file.filings_layer.output_path
+  layer_name       = "filings"
+  compatible_runtimes = ["python3.12"]
+  source_code_hash = data.archive_file.filings_layer.output_base64sha256
+}
+
 
 # IAM role for Lambda
 resource "aws_iam_role" "lambda_role" {
@@ -191,5 +203,10 @@ resource "aws_lambda_function" "lambdas" {
   timeout          = 180
   memory_size      = 512
 
-  layers           = [aws_lambda_layer_version.user_auth.arn, aws_lambda_layer_version.dynamo.arn, aws_lambda_layer_version.s3.arn]
+  layers           = [
+    aws_lambda_layer_version.user_auth.arn, 
+    aws_lambda_layer_version.dynamo.arn, 
+    aws_lambda_layer_version.utils.arn, 
+    aws_lambda_layer_version.filings.arn
+  ]
 }

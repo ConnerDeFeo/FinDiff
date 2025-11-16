@@ -121,7 +121,7 @@ function App() {
               {/* Filing Selection */}
               <div className="pb-6 border-b border-gray-200">
                 <h3 className="text-sm font-semibold findiff-secondary-blue mb-4">Select Filings to Compare</h3>
-                <div className="space-y-4">
+                <div className="flex flex-row jsutify-between gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-2">Older Filing</label>
                     <select 
