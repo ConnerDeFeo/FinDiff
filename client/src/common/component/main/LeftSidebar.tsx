@@ -21,6 +21,7 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
     const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
+    
     const handleCompareSubmit = async () => {
         if(!selectedOlderFilingDate || !selectedNewerFilingDate) return;
         setAnalysis('');
@@ -52,9 +53,9 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
     }
     const handleSubmit = () => {
         if(analysisMode === 'compare') {
-        handleCompareSubmit();
+            handleCompareSubmit();
         } else {
-        handleSingleAnalysisSubmit();
+            handleSingleAnalysisSubmit();
         }
     }
 
@@ -184,7 +185,7 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                             (analysisMode === 'single' && !selectedSingleFilingDate)
                         }
                     >
-                    {analysisMode === 'compare' ? 'Compare Filings' : 'Analyze Filing'}
+                        {analysisMode === 'compare' ? 'Compare Filings' : 'Analyze Filing'}
                     </FinDiffButton>
                 </div>
                 </div>
