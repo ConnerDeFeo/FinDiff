@@ -10,7 +10,7 @@ const MarkDownDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
                     h2: ({node, ...props}) =><h2 className="text-xl findiff-secondary-blue font-bold my-4" {...props}></h2>,
                     h3: ({node, ...props}) =><h3 className="text-lg findiff-secondary-blue font-bold my-3" {...props}></h3>,
                     p: ({node, ...props}) =><p className="my-2 leading-7 text-gray-800" {...props}></p>,
-                    li: ({node, ...props}) =><li className="list-disc list-inside my-4" {...props}></li>,
+                    li: ({node, ...props}) =><li className="list-disc list-inside my-4 ml-4" {...props}></li>,
                     strong: ({node, ...props}) =><strong {...props}></strong>,
                 }}
             >

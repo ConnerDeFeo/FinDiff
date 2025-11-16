@@ -4,6 +4,7 @@ import SearchStock from "../SearchStock";
 import secService from "../../../service/SecService";
 import type { Stock } from "../../types/Stock";
 import { Sections } from "../../variables/Sections";
+import FindiffDropDown from "../display/FindiffDropDown";
 
 const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis}:
     {
@@ -107,26 +108,8 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                 <div className="pb-6 border-b border-gray-200">
                     <label className="block text-xs font-medium text-gray-700 mb-2">Analysis Mode</label>
                     <div className="flex gap-2">
-                    <button
-                        onClick={() => setAnalysisMode('compare')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                        analysisMode === 'compare'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                        Compare Filings
-                    </button>
-                    <button
-                        onClick={() => setAnalysisMode('single')}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                        analysisMode === 'single'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                        Single Analysis
-                    </button>
+                    <FinDiffButton gray={analysisMode !== 'compare'} onClick={() => setAnalysisMode('compare')}>Compare Filings</FinDiffButton>
+                    <FinDiffButton gray={analysisMode !== 'single'} onClick={() => setAnalysisMode('single')}>Single Analysis</FinDiffButton>
                     </div>
                 </div>
 
@@ -136,83 +119,69 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                     {analysisMode === 'compare' ? 'Select Filings to Compare' : 'Select Filing to Analyze'}
                     </h3>
                     {analysisMode === 'compare' ? (
-                    <div className="flex flex-row jsutify-between gap-4">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">Older Filing</label>
-                        <select 
-                        className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
-                        value={selectedOlderFilingDate} 
-                        onChange={e => setSelectedOlderFilingDate(e.target.value)}
-                        >
-                        <option value="" className="cursor-pointer">Select a filing</option>
-                        {available10KFilings.map(filing=> (!selectedNewerFilingDate || filing.filingDate < selectedNewerFilingDate) && (
-                            <option key={filing.accessionNumber} value={filing.filingDate} className="cursor-pointer">
-                            {filing.filingDate.split('-')[0]}
-                            </option>
-                        ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">Newer Filing</label>
-                        <select 
-                        className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
-                        value={selectedNewerFilingDate} 
-                        onChange={e=>setSelectedNewerFilingDate(e.target.value)}
-                        >
-                        <option value="">Select a filing</option>
-                        {available10KFilings.map(filing=>(!selectedOlderFilingDate || filing.filingDate > selectedOlderFilingDate) && (
-                            <option key={filing.accessionNumber} value={filing.filingDate}>
-                            {filing.filingDate.split('-')[0]}
-                            </option>
-                        ))}
-                        </select>
-                    </div>
+                    <div className="flex flex-row justify-between gap-4">
+                        <FindiffDropDown
+                            label="Older Filing"
+                            options={available10KFilings
+                                .filter(filing => !selectedNewerFilingDate || filing.filingDate < selectedNewerFilingDate)
+                                .map(filing => filing.filingDate.split('-')[0])}
+                            value={selectedOlderFilingDate ? selectedOlderFilingDate.split('-')[0] : ''}
+                            onChange={(value) => {
+                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
+                                if (filing) setSelectedOlderFilingDate(filing.filingDate);
+                            }}
+                            placeholder="Select a filing"
+                        />
+                        <FindiffDropDown
+                            label="Newer Filing"
+                            options={available10KFilings
+                                .filter(filing => !selectedOlderFilingDate || filing.filingDate > selectedOlderFilingDate)
+                                .map(filing => filing.filingDate.split('-')[0])}
+                            value={selectedNewerFilingDate ? selectedNewerFilingDate.split('-')[0] : ''}
+                            onChange={(value) => {
+                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
+                                if (filing) setSelectedNewerFilingDate(filing.filingDate);
+                            }}
+                            placeholder="Select a filing"
+                        />
                     </div>
                     ) : (
-                    <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Select Filing</label>
-                    <select 
-                        className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
-                        value={selectedSingleFilingDate} 
-                        onChange={e => setSelectedSingleFilingDate(e.target.value)}
-                    >
-                        <option value="" className="cursor-pointer">Select a filing</option>
-                        {available10KFilings.map(filing => (
-                        <option key={filing.accessionNumber} value={filing.filingDate} className="cursor-pointer">
-                            {filing.filingDate.split('-')[0]}
-                        </option>
-                        ))}
-                    </select>
-                    </div>
+                        <FindiffDropDown
+                            label="Select Filing"
+                            options={available10KFilings.map(filing => filing.filingDate.split('-')[0])}
+                            value={selectedSingleFilingDate ? selectedSingleFilingDate.split('-')[0] : ''}
+                            onChange={(value) => {
+                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
+                                if (filing) setSelectedSingleFilingDate(filing.filingDate);
+                            }}
+                            placeholder="Select a filing"
+                        />
                     )}
                 </div>
 
                 {/* Sections Selection */}
                 <div className="pb-6">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Section to Analyze</label>
-                    <select 
-                    className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm cursor-pointer hover:border-blue-500 focus:border-blue-800 focus:ring-2 focus:ring-blue-200 transition-all" 
-                    value={selectedSection || ''} 
-                    onChange={e => setSelectedSection(e.target.value)}
-                    >
-                    <option value="">Select a section</option>
-                    {Object.values(Sections).map((section) => (
-                        <option key={section} value={section}>
-                        {section.replace(/_/g, ' ')}
-                        </option>
-                    ))}
-                    </select>
+                    <FindiffDropDown
+                        label="Section to Analyze"
+                        options={Object.values(Sections).map(section => section.replace(/_/g, ' '))}
+                        value={selectedSection ? selectedSection.replace(/_/g, ' ') : ''}
+                        onChange={(value) => {
+                            const section = Object.values(Sections).find(s => s.replace(/_/g, ' ') === value);
+                            if (section) setSelectedSection(section);
+                        }}
+                        placeholder="Select a section"
+                    />
                 </div>
 
                 {/* Action Button */}
                 <div>
                     <FinDiffButton 
-                    onClick={handleSubmit} 
-                    disabled={
-                        awaitingAnalysis || !selectedSection ||
-                        (analysisMode === 'compare' && (!selectedOlderFilingDate || !selectedNewerFilingDate)) ||
-                        (analysisMode === 'single' && !selectedSingleFilingDate)
-                    }
+                        onClick={handleSubmit} 
+                        disabled={
+                            awaitingAnalysis || !selectedSection ||
+                            (analysisMode === 'compare' && (!selectedOlderFilingDate || !selectedNewerFilingDate)) ||
+                            (analysisMode === 'single' && !selectedSingleFilingDate)
+                        }
                     >
                     {analysisMode === 'compare' ? 'Compare Filings' : 'Analyze Filing'}
                     </FinDiffButton>
