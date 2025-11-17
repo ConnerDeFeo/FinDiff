@@ -22,6 +22,11 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     
+    
+    const convertSectionKeyToDisplay = (key: string) => {
+        return key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+    }
+    
     const handleCompareSubmit = async () => {
         if(!selectedOlderFilingDate || !selectedNewerFilingDate) return;
         setAnalysis('');
@@ -71,6 +76,7 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
         fetchAvailable10KFilings(stock.cik_str);
         setSelectedStock(stock);
     }
+
     return (
         <div className="w-96 bg-white border-r border-gray-200 shadow-lg overflow-y-auto flex-shrink-0">
             <div className="p-6">
@@ -94,14 +100,14 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                 <div className="pb-6 border-b border-gray-200">
                     <h2 className="font-bold text-xl mb-3 findiff-secondary-blue">{selectedStock.title}</h2>
                     <div className="space-y-2">
-                    <p className="text-sm text-gray-700">
-                        <span className="font-semibold findiff-primary-blue">Ticker:</span> 
-                        <span className="ml-2 px-2 py-1 bg-blue-100 findiff-primary-blue rounded text-xs font-mono">{selectedStock.ticker}</span>
-                    </p>
-                    <p className="text-sm text-gray-700">
-                        <span className="font-semibold findiff-primary-blue">CIK:</span> 
-                        <span className="ml-2 font-mono text-xs text-gray-600">{selectedStock.cik_str}</span>
-                    </p>
+                        <p className="text-sm text-gray-700">
+                            <span className="font-semibold findiff-primary-blue">Ticker:</span> 
+                            <span className="ml-2 px-2 py-1 bg-blue-100 findiff-primary-blue rounded text-xs font-mono">{selectedStock.ticker}</span>
+                        </p>
+                        <p className="text-sm text-gray-700">
+                            <span className="font-semibold findiff-primary-blue">CIK:</span> 
+                            <span className="ml-2 font-mono text-xs text-gray-600">{selectedStock.cik_str}</span>
+                        </p>
                     </div>
                 </div>
 
@@ -164,15 +170,15 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                 <div className="pb-6">
                     <FindiffDropDown
                         label="Section to Analyze"
-                        options={Object.values(Sections).map(section => section.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()))}
-                        value={selectedSection ? selectedSection.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : ''}
+                        options={Object.values(Sections).map(section => convertSectionKeyToDisplay(section))}
+                        value={selectedSection ? convertSectionKeyToDisplay(selectedSection) : ''}
                         onChange={(value) => {
-                            const section = Object.values(Sections).find(s => s.replace(/_/g, ' ') === value);
+                            const section = Object.values(Sections).find(s => convertSectionKeyToDisplay(s) === value);
                             if (section) setSelectedSection(section);
                         }}
                         placeholder="Select a section"
                         openUpward
-                        specialOptions={new Set(ImportantSections.map(section => section.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())))}
+                        specialOptions={new Set(ImportantSections.map(section => convertSectionKeyToDisplay(section)))}
                     />
                 </div>
 
