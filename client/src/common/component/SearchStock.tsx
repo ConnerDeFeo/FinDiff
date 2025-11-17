@@ -50,7 +50,7 @@ const SearchStock : React.FC<{onSelect: (stock: Stock) => void}> = ({ onSelect }
             if(ticker.length > 0) {
                 handleSearchTicker();
             }
-        }, 500);
+        }, 300);
 
         // Cleanup: clear timeout if ticker changes before 500ms
         return () => {clearTimeout(delayDebounceFn); setLoading(false);};
