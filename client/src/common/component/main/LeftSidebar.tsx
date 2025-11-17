@@ -3,7 +3,7 @@ import FinDiffButton from "../FinDiffButton";
 import SearchStock from "../SearchStock";
 import secService from "../../../service/SecService";
 import type { Stock } from "../../types/Stock";
-import { Sections } from "../../variables/Sections";
+import { ImportantSections, Sections } from "../../variables/Sections";
 import FindiffDropDown from "../display/FindiffDropDown";
 
 const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis}:
@@ -164,14 +164,15 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                 <div className="pb-6">
                     <FindiffDropDown
                         label="Section to Analyze"
-                        options={Object.values(Sections).map(section => section.replace(/_/g, ' '))}
-                        value={selectedSection ? selectedSection.replace(/_/g, ' ') : ''}
+                        options={Object.values(Sections).map(section => section.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()))}
+                        value={selectedSection ? selectedSection.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : ''}
                         onChange={(value) => {
                             const section = Object.values(Sections).find(s => s.replace(/_/g, ' ') === value);
                             if (section) setSelectedSection(section);
                         }}
                         placeholder="Select a section"
                         openUpward
+                        specialOptions={new Set(ImportantSections.map(section => section.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())))}
                     />
                 </div>
 

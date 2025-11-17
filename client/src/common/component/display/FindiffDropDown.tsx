@@ -9,6 +9,7 @@ interface FindiffDropDownProps {
   className?: string;
   disabled?: boolean;
   openUpward?: boolean;
+  specialOptions?: Set<string>; // New prop for special options
 }
 
 const FindiffDropDown = ({
@@ -19,7 +20,8 @@ const FindiffDropDown = ({
   label,
   className = '',
   disabled = false,
-  openUpward
+  openUpward,
+  specialOptions = new Set(),
 }: FindiffDropDownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,12 +97,12 @@ const FindiffDropDown = ({
           } ${!value ? 'text-gray-400' : 'text-gray-900'}`}
         >
           <span className="truncate">{displayValue}</span>
-          <svg
-            className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+            <svg
+              className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -133,7 +135,9 @@ const FindiffDropDown = ({
                     onClick={() => handleSelect(option)}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${
                       option === value ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-900'
-                    }`}
+                    }
+                    ${specialOptions.has(option) ? 'font-bold' : ''}
+                    `}
                   >
                     {option}
                   </button>
