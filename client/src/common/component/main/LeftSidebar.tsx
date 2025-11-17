@@ -33,8 +33,8 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
         const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSection);
 
         if(resp.ok){
-        const jobId = await resp.json();
-        setJobId(jobId);
+            const jobId = await resp.json();
+            setJobId(jobId);
         }
     }
 
@@ -47,15 +47,15 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
         const resp = await secService.analyze10KSection(stockData, selectedSection);
 
         if(resp.ok){
-        const jobId = await resp.json();
-        setJobId(jobId);
+            const jobId = await resp.json();
+            setJobId(jobId);
         }
     }
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if(analysisMode === 'compare') {
-            handleCompareSubmit();
+            await handleCompareSubmit();
         } else {
-            handleSingleAnalysisSubmit();
+            await handleSingleAnalysisSubmit();
         }
     }
 
