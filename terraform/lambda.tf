@@ -73,6 +73,12 @@ data "archive_file" "filings_layer" {
   output_path = "${path.module}/../server/layers/filings/filings.zip"
 }
 
+data "archive_file" "pinecone_utils_layer" {
+  type        = "zip"
+  source_dir  = "${path.module}/../server/layers/pinecone_utils/"
+  output_path = "${path.module}/../server/layers/pinecone_utils/pinecone_utils.zip"
+}
+
 resource "aws_lambda_layer_version" "user_auth" {
   filename         = data.archive_file.user_auth_layer.output_path
   layer_name       = "user_auth"
@@ -101,6 +107,12 @@ resource "aws_lambda_layer_version" "filings" {
   source_code_hash = data.archive_file.filings_layer.output_base64sha256
 }
 
+resource "aws_lambda_layer_version" "pinecone_utils" {
+  filename         = data.archive_file.pinecone_utils_layer.output_path
+  layer_name       = "pinecone_utils"
+  compatible_runtimes = ["python3.12"]
+  source_code_hash = data.archive_file.pinecone_utils_layer.output_base64sha256
+}
 
 # IAM role for Lambda
 resource "aws_iam_role" "lambda_role" {
@@ -231,6 +243,7 @@ resource "aws_lambda_function" "lambdas" {
     aws_lambda_layer_version.user_auth.arn, 
     aws_lambda_layer_version.dynamo.arn, 
     aws_lambda_layer_version.utils.arn, 
-    aws_lambda_layer_version.filings.arn
+    aws_lambda_layer_version.filings.arn,
+    aws_lambda_layer_version.pinecone_utils.arn
   ]
 }
