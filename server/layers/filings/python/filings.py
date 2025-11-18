@@ -43,7 +43,7 @@ async def fetch_10k_from_sec(url):
         else:
             return None
 
-def parse_html_to_text(html_content, requested_section):
+def get_requested_sections(html_content, requested_section):
     """
     Extract a specific section from a 10-K filing HTML.
     
@@ -224,7 +224,7 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
         raise ValueError("Could not fetch 10-K filing from SEC.")
     
     # Extract the requested section
-    text, tokens = parse_html_to_text(doc, section)
+    text, tokens = get_requested_sections(doc, section)
     
     # Summarize the section
     summarization = await summarize_section(text, tokens, section, summary_key)
