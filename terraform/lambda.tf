@@ -36,6 +36,14 @@ locals {
     "cache_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/cache_available_10k_filings"
       output_path = "../server/lambdas/search/zips/cache_available_10k_filings.zip"
+    },
+    "generate_response" = {
+      source_dir  = "../server/lambdas/chatbot/generate_response"
+      output_path = "../server/lambdas/chatbot/zips/generate_response.zip"
+    },
+    "generate_response_worker" = {
+      source_dir  = "../server/lambdas/chatbot/generate_response_worker"
+      output_path = "../server/lambdas/chatbot/zips/generate_response_worker.zip"
     }
   }
 }

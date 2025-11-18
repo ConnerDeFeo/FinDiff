@@ -10,6 +10,7 @@ locals {
     # POST Lambdas
     "compare_10k_filings" = {lambda = aws_lambda_function.lambdas["compare_10k_filings"], method = "POST"}
     "analyze_10k_section" = {lambda = aws_lambda_function.lambdas["analyze_10k_section"], method = "POST"}
+    "generate_response" = {lambda = aws_lambda_function.lambdas["generate_response"], method = "POST"}
 
     # DELETE Lambdas
   }
