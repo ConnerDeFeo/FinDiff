@@ -236,7 +236,7 @@ resource "aws_lambda_function" "lambdas" {
   runtime          = "python3.12"
   filename         = data.archive_file.lambda_archives[each.key].output_path
   source_code_hash = data.archive_file.lambda_archives[each.key].output_base64sha256
-  timeout          = 180
+  timeout          = 500
   memory_size      = 512
 
   layers           = [

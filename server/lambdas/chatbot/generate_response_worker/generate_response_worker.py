@@ -1,15 +1,12 @@
-from pinecone_utils import embed_document, fetch_existing_embeddings
-import json
-from user_auth import post_auth_header
+from pinecone_utils import embed_text, fetch_existing_embeddings
 from dynamo import update_item
-from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response
+from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response, section_order
 import boto3
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 
 async def generate_response_worker(event, context):
-    auth_header = post_auth_header()
 
     def update_job_progress(progress):
         update_item(
@@ -29,9 +26,10 @@ async def generate_response_worker(event, context):
 
         doc = fetch_10k_from_sec(f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession.replace('-', '')}/{primaryDoc}")
         text = parse_text_from_html(doc)
+        section_embedding_tasks = []
 
         # Call the embedding function
-        await embed_document(cik, accession, primaryDoc, text)
+        await embed_text(cik, accession, primaryDoc, text)
         matches = await fetch_existing_embeddings(cik, accession, primaryDoc, prompt)
         matches_data = [match['metadata']['text'] for match in matches]
 

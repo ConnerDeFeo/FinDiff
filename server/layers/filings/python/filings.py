@@ -9,6 +9,36 @@ OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 BUCKET_NAME = 'findiff-bucket-prod'
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 s3 = boto3.client('s3')
+# Define all 10-K sections in order with regex patterns
+section_order = [
+    # Part I
+    ("business", r"Item\s+1\s*[\.:-]\s*Business"),
+    ("risk_factors", r"Item\s+1A\s*[\.:-]\s*Risk Factors"),
+    ("unresolved_staff_comments", r"Item\s+1B\s*[\.:-]\s*Unresolved Staff Comments"),
+    ("cybersecurity", r"Item\s+1C\s*[\.:-]\s*Cybersecurity"),
+    ("properties", r"Item\s+2\s*[\.:-]\s*Properties"),
+    ("legal_proceedings", r"Item\s+3\s*[\.:-]\s*Legal Proceedings"),
+    ("mine_safety", r"Item\s+4\s*[\.:-]\s*Mine Safety Disclosures"),
+    # Part II
+    ("market_for_registrants_common_equity", r"Part\s+(2|II)\s+Item\s+5\s*[\.:-]\s*Market\s+for\s+Registrant.s\s+Common\s+Equity"),
+    ("selected_financial_data", r"Item\s+6\s*[\.:-]\s*Selected Financial Data"),
+    ("managements_discussion_and_analysis", r"Item\s+7\s*[\.:-]\s*Management.s Discussion and Analysis"),
+    ("quantitative_and_qualitative_disclosures", r"Item\s+7A\s*[\.:-]\s*Quantitative"),
+    ("financial_statements_and_supplementary_data", r"Item\s+8\s*[\.:-]\s*Financial Statements and Supplementary Data"),
+    ("changes_in_and_disagreements_with_accountants", r"Item\s+9\s*[\.:-]\s*Changes in and Disagreements"),
+    ("controls_and_procedures", r"Item\s+9A\s*[\.:-]\s*Controls and Procedures"),
+    ("other_information", r"Item\s+9B\s*[\.:-]\s*Other Information"),
+    ("disclosures_regarding_foreign_jurisdictions", r"Item\s+9C\s*[\.:-]\s*Disclosure\sRegarding\sForeign\sJurisdictions"),
+    # Part III
+    ("directors_and_executive_officers", r"Part\s+(3|III)\s+Item\s+10\s*[\.:-]\s*Directors"),
+    ("executive_compensation", r"Item\s+11\s*[\.:-]\s*Executive Compensation"),
+    ("security_ownership", r"Item\s+12\s*[\.:-]\s*Security Ownership"),
+    ("certain_relationships", r"Item\s+13\s*[\.:-]\s*Certain Relationships"),
+    ("principal_accountant_fees", r"Item\s+14\s*[\.:-]\s*Principal Accountant"),
+    ("exhibits", r"Part\s+(4|IV)\s+Item\s+15\s*[\.:-]\s*Exhibits"),
+]
+
+section_index = {name: idx for idx, (name, _) in enumerate(section_order)}
 def exists(key: str) -> bool:
     try:
         s3.head_object(Bucket='findiff-bucket-prod', Key=key)
@@ -63,7 +93,7 @@ def parse_text_from_html(html_content):
     text = soup.get_text(separator='\n', strip=True)
     return text
 
-def get_requested_sections(html_content, requested_section):
+def get_requested_section(html_content, requested_section):
     """
     Extract a specific section from a 10-K filing HTML.
     
@@ -75,58 +105,25 @@ def get_requested_sections(html_content, requested_section):
         Tuple of (section_text, token_count)
     """
     full_text = parse_text_from_html(html_content)
-    
-    # Define all 10-K sections in order with regex patterns
-    section_order = [
-        # Part I
-        ("business", r"Item\s+1\s*[\.:-]\s*Business"),
-        ("risk_factors", r"Item\s+1A\s*[\.:-]\s*Risk Factors"),
-        ("unresolved_staff_comments", r"Item\s+1B\s*[\.:-]\s*Unresolved Staff Comments"),
-        ("cybersecurity", r"Item\s+1C\s*[\.:-]\s*Cybersecurity"),
-        ("properties", r"Item\s+2\s*[\.:-]\s*Properties"),
-        ("legal_proceedings", r"Item\s+3\s*[\.:-]\s*Legal Proceedings"),
-        ("mine_safety", r"Item\s+4\s*[\.:-]\s*Mine Safety Disclosures"),
-        # Part II
-        ("market_for_registrants_common_equity", r"Part\s+(2|II)\s+Item\s+5\s*[\.:-]\s*Market\s+for\s+Registrant.s\s+Common\s+Equity"),
-        ("selected_financial_data", r"Item\s+6\s*[\.:-]\s*Selected Financial Data"),
-        ("managements_discussion_and_analysis", r"Item\s+7\s*[\.:-]\s*Management.s Discussion and Analysis"),
-        ("quantitative_and_qualitative_disclosures", r"Item\s+7A\s*[\.:-]\s*Quantitative"),
-        ("financial_statements_and_supplementary_data", r"Item\s+8\s*[\.:-]\s*Financial Statements and Supplementary Data"),
-        ("changes_in_and_disagreements_with_accountants", r"Item\s+9\s*[\.:-]\s*Changes in and Disagreements"),
-        ("controls_and_procedures", r"Item\s+9A\s*[\.:-]\s*Controls and Procedures"),
-        ("other_information", r"Item\s+9B\s*[\.:-]\s*Other Information"),
-        ("disclosures_regarding_foreign_jurisdictions", r"Item\s+9C\s*[\.:-]\s*Disclosure\sRegarding\sForeign\sJurisdictions"),
-        # Part III
-        ("directors_and_executive_officers", r"Part\s+(3|III)\s+Item\s+10\s*[\.:-]\s*Directors"),
-        ("executive_compensation", r"Item\s+11\s*[\.:-]\s*Executive Compensation"),
-        ("security_ownership", r"Item\s+12\s*[\.:-]\s*Security Ownership"),
-        ("certain_relationships", r"Item\s+13\s*[\.:-]\s*Certain Relationships"),
-        ("principal_accountant_fees", r"Item\s+14\s*[\.:-]\s*Principal Accountant"),
-        ("exhibits", r"Part\s+(4|IV)\s+Item\s+15\s*[\.:-]\s*Exhibits"),
-    ]
 
-    section_start = None
+    start_index = section_index.get(requested_section)
+    if start_index is None:
+        return "", 0  # Section not found
+    end_index = start_index + 1
+
+    matches = list(re.finditer(section_order[start_index][1], full_text, re.IGNORECASE))
+    if not matches:
+        return "", 0
+    section_start = matches[-1].start()
     section_end = None
-    found_target = False
 
-    # Find the requested section by locating it and the next section
-    for section_name, pattern in section_order:
-        matches = list(re.finditer(pattern, full_text, re.IGNORECASE))
-        
-        if not matches:
-            continue
+    # Find the start of the next section to determine the end of the current section
+    while not section_end and end_index < len(section_order):
+        matches = list(re.finditer(section_order[end_index][1], full_text, re.IGNORECASE))
+        if matches:
+            section_end = matches[-1].start()
+        end_index += 1
 
-        # Use last instance to avoid table of contents matches
-        section_match = matches[-1]
-        
-        if section_name == requested_section:
-            section_start = section_match.end()
-            found_target = True
-        elif found_target:
-            # Found the next section, use it as the end boundary
-            section_end = section_match.start()
-            break
-    
     # Extract and return the section text with token estimate
     if section_start is not None and section_end is not None:
         section_text = full_text[section_start:section_end].strip()
@@ -237,7 +234,7 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
         raise ValueError("Could not fetch 10-K filing from SEC.")
     
     # Extract the requested section
-    text, tokens = get_requested_sections(doc, section)
+    text, tokens = get_requested_section(doc, section)
     
     # Summarize the section
     summarization = await summarize_section(text, tokens, section, summary_key)

@@ -38,7 +38,7 @@ async def generate_embedding(text):
     result = json.loads(response['body'].read())
     return result['embedding']
 
-async def embed_chunk(cik, accession, primaryDoc, chunk_text, chunk_index):
+async def embed_chunk(cik, accession, primaryDoc, chunk_text, chunk_index, metadata={}):
     embedding = await generate_embedding(chunk_text)
     
     metadata = {
@@ -46,7 +46,8 @@ async def embed_chunk(cik, accession, primaryDoc, chunk_text, chunk_index):
         "accession": accession,
         "primaryDoc": primaryDoc,
         "chunk_index": chunk_index,
-        "text": chunk_text
+        "text": chunk_text,
+        **metadata
     }
     
     vector_id = f"{cik}_{accession}_{primaryDoc}_{chunk_index}"
@@ -56,12 +57,12 @@ async def embed_chunk(cik, accession, primaryDoc, chunk_text, chunk_index):
         vectors=[(vector_id, embedding, metadata)]
     )
 
-async def embed_document(cik: str, accession: str, primaryDoc: str, raw_text: str):
+async def embed_text(cik: str, accession: str, primaryDoc: str, raw_text: str, metadata: dict = {}):
     """Main function to embed one 10-K document"""
     tasks = []
     sections = chunk_text(raw_text)
     for chunk_index, chunk in enumerate(sections):
-        tasks.append(embed_chunk(cik, accession, primaryDoc, chunk, chunk_index))
+        tasks.append(embed_chunk(cik, accession, primaryDoc, chunk, chunk_index, metadata))
     await asyncio.gather(*tasks)
 
 async def fetch_existing_embeddings(cik, accession, primaryDoc, prompt):

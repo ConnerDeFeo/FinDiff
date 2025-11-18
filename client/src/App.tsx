@@ -14,7 +14,7 @@ function App() {
 
   useEffect(()=>{
     const poll = async (attempt: number) => {
-      if (attempt >= 90) {
+      if (attempt >= 150) {
         setAnalysis('Analysis timed out. Please try again later.');
         setAwaitingAnalysis(false);
         return;

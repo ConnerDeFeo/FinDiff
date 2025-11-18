@@ -2,6 +2,7 @@ import json
 from user_auth import post_auth_header
 import uuid 
 import boto3
+from dynamo import put_item
 
 lambda_client = boto3.client('lambda')
 
@@ -30,6 +31,15 @@ def generate_response(event, context):
             InvocationType='Event',  # Asynchronous invocation
             Payload=json.dumps(embedding_payload)
         )
+
+        put_item(
+            'conversation_jobs',
+            {
+                'job_id': job_id,
+                'progress': 'PROCESSING'
+            }
+        )
+
         return {
             "statusCode": 200,
             "headers": {
