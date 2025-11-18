@@ -43,6 +43,26 @@ async def fetch_10k_from_sec(url):
         else:
             return None
 
+def parse_text_from_html(html_content):
+    """
+    Parse and clean text from HTML content of a 10-K filing.
+    
+    Args:
+        html_content: Raw HTML content of the 10-K filing
+        
+    Returns:
+        Cleaned text extracted from the HTML
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove script and style tags to clean up content
+    for script in soup(["script", "style"]):
+        script.decompose()
+    
+    # Get all text with newline separators
+    text = soup.get_text(separator='\n', strip=True)
+    return text
+
 def get_requested_sections(html_content, requested_section):
     """
     Extract a specific section from a 10-K filing HTML.
@@ -54,14 +74,7 @@ def get_requested_sections(html_content, requested_section):
     Returns:
         Tuple of (section_text, token_count)
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Remove script and style tags to clean up content
-    for script in soup(["script", "style"]):
-        script.decompose()
-    
-    # Get all text with newline separators
-    full_text = soup.get_text(separator='\n', strip=True)
+    full_text = parse_text_from_html(html_content)
     
     # Define all 10-K sections in order with regex patterns
     section_order = [
