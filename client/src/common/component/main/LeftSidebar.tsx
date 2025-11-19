@@ -6,61 +6,96 @@ import type { Stock } from "../../types/Stock";
 import { ImportantSections, Sections } from "../../variables/Sections";
 import FindiffDropDown from "../display/FindiffDropDown";
 
-const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis}:
+
+const LeftSidebar = ({ setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock}:
     {
-        analysisMode: 'compare' | 'single' | 'chatbot', 
         setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
         setJobId: React.Dispatch<React.SetStateAction<string>>, 
         setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
-        awaitingAnalysis: boolean
+        awaitingAnalysis: boolean,
+        selectedDocuments: {
+            filingDate: string;
+            accessionNumber: string;
+            primaryDocument: string;
+            year: string;
+        }[],
+        selectedStock: Stock | undefined,
+        setSelectedDocuments: React.Dispatch<React.SetStateAction<{
+            filingDate: string;
+            accessionNumber: string;
+            primaryDocument: string;
+            year: string;
+        }[]>>,
+        setSelectedStock: React.Dispatch<React.SetStateAction<Stock | undefined>>,
     }
 ) => {
-    const [selectedOlderFilingDate, setSelectedOlderFilingDate] = useState<string>('');
-    const [selectedNewerFilingDate, setSelectedNewerFilingDate] = useState<string>('');
-    const [selectedSingleFilingDate, setSelectedSingleFilingDate] = useState<string>('');
-    const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
-    
+    const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
     
     const convertSectionKeyToDisplay = (key: string) => {
         return key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
     }
+
+    const addDocument = () => {
+        if (!currentFilingSelection || selectedDocuments.length >= 2) return;
+        
+        const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === currentFilingSelection);
+        if (filing && !selectedDocuments.some(doc => doc.filingDate === filing.filingDate)) {
+            setSelectedDocuments([...selectedDocuments, {
+                filingDate: filing.filingDate,
+                accessionNumber: filing.accessionNumber,
+                primaryDocument: filing.primaryDocument,
+                year: filing.filingDate.split('-')[0]
+            }]);
+            setCurrentFilingSelection('');
+        }
+    };
+
+    const removeDocument = (filingDate: string) => {
+        setSelectedDocuments(selectedDocuments.filter(doc => doc.filingDate !== filingDate));
+    };
     
-    const handleCompareSubmit = async () => {
-        if(!selectedOlderFilingDate || !selectedNewerFilingDate) return;
-        setAnalysis('');
-
-        const stock1 = available10KFilings.find(filing=>filing.filingDate === selectedOlderFilingDate);
-        const stock2 = available10KFilings.find(filing=>filing.filingDate === selectedNewerFilingDate);
-        const stockData1 = {cik: selectedStock!.cik_str, accessionNumber: stock1!.accessionNumber, primaryDocument: stock1!.primaryDocument};
-        const stockData2 = {cik: selectedStock!.cik_str, accessionNumber: stock2!.accessionNumber, primaryDocument: stock2!.primaryDocument};
-        const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSection);
-
-        if(resp.ok){
-            const jobId = await resp.json();
-            setJobId(jobId);
-        }
-    }
-
-    const handleSingleAnalysisSubmit = async () => {
-        if(!selectedSingleFilingDate) return;
-        setAnalysis('');
-
-        const filing = available10KFilings.find(f=>f.filingDate === selectedSingleFilingDate);
-        const stockData = {cik: selectedStock!.cik_str, accessionNumber: filing!.accessionNumber, primaryDocument: filing!.primaryDocument};
-        const resp = await secService.analyze10KSection(stockData, selectedSection);
-
-        if(resp.ok){
-            const jobId = await resp.json();
-            setJobId(jobId);
-        }
-    }
     const handleSubmit = async () => {
-        if(analysisMode === 'compare') {
-            await handleCompareSubmit();
-        } else {
-            await handleSingleAnalysisSubmit();
+        if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
+        
+        setAnalysis('');
+
+        if (selectedDocuments.length === 1) {
+            // Single analysis
+            setAnalysisMode('single');
+            const doc = selectedDocuments[0];
+            const stockData = {
+                cik: selectedStock.cik_str, 
+                accessionNumber: doc.accessionNumber, 
+                primaryDocument: doc.primaryDocument
+            };
+            const resp = await secService.analyze10KSection(stockData, selectedSection);
+            
+            if(resp.ok){
+                const jobId = await resp.json();
+                setJobId(jobId);
+            }
+        } else if (selectedDocuments.length === 2) {
+            // Comparison analysis
+            setAnalysisMode('compare');
+            const [doc1, doc2] = selectedDocuments.sort((a, b) => a.filingDate.localeCompare(b.filingDate));
+            const stockData1 = {
+                cik: selectedStock.cik_str, 
+                accessionNumber: doc1.accessionNumber, 
+                primaryDocument: doc1.primaryDocument
+            };
+            const stockData2 = {
+                cik: selectedStock.cik_str, 
+                accessionNumber: doc2.accessionNumber, 
+                primaryDocument: doc2.primaryDocument
+            };
+            const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSection);
+
+            if(resp.ok){
+                const jobId = await resp.json();
+                setJobId(jobId);
+            }
         }
     }
 
@@ -111,58 +146,61 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                     </div>
                 </div>
 
-                {/* Analysis Mode Toggle */}
+                {/* Selected Documents */}
                 <div className="pb-6 border-b border-gray-200">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Analysis Mode</label>
-                    <div className="flex gap-2">
-                    <FinDiffButton gray={analysisMode !== 'compare'} onClick={() => setAnalysisMode('compare')}>Compare Filings</FinDiffButton>
-                    <FinDiffButton gray={analysisMode !== 'single'} onClick={() => setAnalysisMode('single')}>Single Analysis</FinDiffButton>
-                    </div>
-                </div>
-
-                {/* Filing Selection */}
-                <div className="pb-6 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold findiff-secondary-blue mb-4">
-                    {analysisMode === 'compare' ? 'Select Filings to Compare' : 'Select Filing to Analyze'}
+                    <h3 className="text-sm font-semibold findiff-secondary-blue mb-3">
+                        Selected Documents ({selectedDocuments.length}/2)
                     </h3>
-                    {analysisMode === 'compare' ? (
-                    <div className="flex flex-row justify-between gap-4">
-                        <FindiffDropDown
-                            label="Older Filing"
-                            options={available10KFilings
-                                .filter(filing => !selectedNewerFilingDate || filing.filingDate < selectedNewerFilingDate)
-                                .map(filing => filing.filingDate.split('-')[0])}
-                            value={selectedOlderFilingDate ? selectedOlderFilingDate.split('-')[0] : ''}
-                            onChange={(value) => {
-                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
-                                if (filing) setSelectedOlderFilingDate(filing.filingDate);
-                            }}
-                            placeholder="Select a filing"
-                        />
-                        <FindiffDropDown
-                            label="Newer Filing"
-                            options={available10KFilings
-                                .filter(filing => !selectedOlderFilingDate || filing.filingDate > selectedOlderFilingDate)
-                                .map(filing => filing.filingDate.split('-')[0])}
-                            value={selectedNewerFilingDate ? selectedNewerFilingDate.split('-')[0] : ''}
-                            onChange={(value) => {
-                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
-                                if (filing) setSelectedNewerFilingDate(filing.filingDate);
-                            }}
-                            placeholder="Select a filing"
-                        />
-                    </div>
+                    {selectedDocuments.length > 0 ? (
+                        <div className="space-y-2 mb-3">
+                            {selectedDocuments.map((doc) => (
+                                <div 
+                                    key={doc.filingDate}
+                                    className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg"
+                                >
+                                    <span className="text-sm text-blue-800 font-medium">{doc.year}</span>
+                                    <button
+                                        onClick={() => removeDocument(doc.filingDate)}
+                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                        disabled={awaitingAnalysis}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     ) : (
-                        <FindiffDropDown
-                            label="Select Filing"
-                            options={available10KFilings.map(filing => filing.filingDate.split('-')[0])}
-                            value={selectedSingleFilingDate ? selectedSingleFilingDate.split('-')[0] : ''}
-                            onChange={(value) => {
-                                const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === value);
-                                if (filing) setSelectedSingleFilingDate(filing.filingDate);
-                            }}
-                            placeholder="Select a filing"
-                        />
+                        <p className="text-xs text-gray-500 mb-3">No documents selected</p>
+                    )}
+                    
+                    {selectedDocuments.length < 2 && (
+                        <div className="space-y-2">
+                            <div className="flex gap-2">
+                                <FindiffDropDown
+                                    options={available10KFilings
+                                        .filter(filing => !selectedDocuments.some(doc => doc.filingDate === filing.filingDate))
+                                        .map(filing => filing.filingDate.split('-')[0])}
+                                    value={currentFilingSelection}
+                                    onChange={setCurrentFilingSelection}
+                                    placeholder="Select a filing"
+                                    disabled={awaitingAnalysis}
+                                />
+                                <button
+                                    onClick={addDocument}
+                                    disabled={!currentFilingSelection || awaitingAnalysis}
+                                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                {selectedDocuments.length === 0 
+                                    ? 'Add 1 document for single analysis, or 2 for comparison' 
+                                    : 'Add 1 more document for comparison analysis'}
+                            </p>
+                        </div>
                     )}
                 </div>
 
@@ -187,12 +225,12 @@ const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awai
                     <FinDiffButton 
                         onClick={handleSubmit} 
                         disabled={
-                            awaitingAnalysis || !selectedSection ||
-                            (analysisMode === 'compare' && (!selectedOlderFilingDate || !selectedNewerFilingDate)) ||
-                            (analysisMode === 'single' && !selectedSingleFilingDate)
+                            awaitingAnalysis || 
+                            !selectedSection || 
+                            selectedDocuments.length === 0
                         }
                     >
-                        {analysisMode === 'compare' ? 'Compare Filings' : 'Analyze Filing'}
+                        {selectedDocuments.length === 2 ? 'Compare Filings' : selectedDocuments.length === 1 ? 'Analyze Filing' : 'Select Documents'}
                     </FinDiffButton>
                 </div>
                 </div>

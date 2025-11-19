@@ -4,14 +4,22 @@ import secService from "./service/SecService";
 import MarkDownDisplay from "./common/component/display/MarkdownDisplay";
 import Spinner from "./common/component/display/Spinner";
 import LeftSidebar from "./common/component/main/LeftSidebar";
+import type { Stock } from "./common/types/Stock";
 
 function App() {
   const [analysis, setAnalysis] = useState<string>('');
   const [progress, setProgress] = useState<string>('');
   const [jobId, setJobId] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
-  const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('compare');
+  const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('chatbot');
   const [userInput, setUserInput] = useState<string>('');
+  const [selectedDocuments, setSelectedDocuments] = useState<{
+    filingDate: string;
+    accessionNumber: string;
+    primaryDocument: string;
+    year: string;
+  }[]>([]);
+  const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
 
   useEffect(()=>{
     const poll = async (attempt: number) => {
@@ -55,12 +63,19 @@ function App() {
   }, [jobId, analysisMode]);
 
   const handlePromptSubmit = async () => {
-    setAnalysisMode('chatbot');
-    const resp = await secService.generateResponse(userInput);
-    if(resp.ok){
-      const jobId = await resp.json();
-      setJobId(jobId);
-      setUserInput('');
+    if(selectedDocuments.length===1){
+      setAnalysisMode('chatbot');
+      const resp = await secService.generateResponse(
+        userInput, 
+        selectedStock!.cik_str, 
+        selectedDocuments[0].accessionNumber, 
+        selectedDocuments[0].primaryDocument
+      );
+      if(resp.ok){
+        const jobId = await resp.json();
+        setJobId(jobId);
+        setUserInput('');
+      }
     }
   }
 
@@ -68,11 +83,14 @@ function App() {
     <div className="h-screen findiff-bg-white flex overflow-hidden">
       {/* Left Sidebar */}
       <LeftSidebar
-        analysisMode={analysisMode}
         setAnalysis={setAnalysis}
         setJobId={setJobId}
         setAnalysisMode={setAnalysisMode}
         awaitingAnalysis={awaitingAnalysis}
+        selectedDocuments={selectedDocuments}
+        setSelectedDocuments={setSelectedDocuments}
+        selectedStock={selectedStock}
+        setSelectedStock={setSelectedStock}
       />
 
       {/* Main Content Area */}
