@@ -6,6 +6,7 @@ locals {
     "get_available_10k_filings" = {lambda = aws_lambda_function.lambdas["get_available_10k_filings"], method = "GET"}
     "get_comparison_status" = {lambda = aws_lambda_function.lambdas["get_comparison_status"], method = "GET"}
     "get_10k_analysis_status" = {lambda = aws_lambda_function.lambdas["get_10k_analysis_status"], method = "GET"}
+    "get_chatbot_status" = {lambda = aws_lambda_function.lambdas["get_chatbot_status"], method = "GET"}
 
     # POST Lambdas
     "compare_10k_filings" = {lambda = aws_lambda_function.lambdas["compare_10k_filings"], method = "POST"}

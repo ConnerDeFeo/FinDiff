@@ -10,8 +10,8 @@ function App() {
   const [progress, setProgress] = useState<string>('');
   const [jobId, setJobId] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
-  const [analysisMode, setAnalysisMode] = useState<'compare' | 'single'>('compare');
-  // const [userInput, setUserInput] = useState<string>('');
+  const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('compare');
+  const [userInput, setUserInput] = useState<string>('');
 
   useEffect(()=>{
     const poll = async (attempt: number) => {
@@ -24,7 +24,10 @@ function App() {
       
       const resp = analysisMode === 'compare' 
         ? await secService.getComparisonStatus(jobId)
-        : await secService.get10KAnalysisStatus(jobId);
+        : analysisMode === 'single' ? 
+        await secService.get10KAnalysisStatus(jobId)
+        : 
+        await secService.getChatbotStatus(jobId);
         
       if(!resp.ok) {
         setAnalysis('Error fetching analysis status.');
@@ -51,9 +54,14 @@ function App() {
     }
   }, [jobId, analysisMode]);
 
-  // const handlePromptSubmit = async () => {
-  //   console.log("Submitting prompt:", userInput);
-  // }
+  const handlePromptSubmit = async () => {
+    const resp = await secService.generateResponse(userInput);
+    if(resp.ok){
+      const jobId = await resp.json();
+      setJobId(jobId);
+      setUserInput('');
+    }
+  }
 
   return (
     <div className="h-screen findiff-bg-white flex overflow-hidden">
@@ -104,7 +112,7 @@ function App() {
         </div>
         
         {/* Text Input Area */}
-        {/* <div className="border-t border-gray-200 bg-white p-4">
+        <div className="border-t border-gray-200 bg-white p-4">
           <div className="max-w-5xl mx-auto">
             <textarea
               value={userInput}
@@ -114,8 +122,14 @@ function App() {
               rows={3}
               onKeyDown={e => e.key === "Enter" ? handlePromptSubmit() : undefined}
             />
+            <button
+              onClick={handlePromptSubmit}
+              className="cursor-pointer mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Submit
+            </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

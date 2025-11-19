@@ -8,10 +8,10 @@ import FindiffDropDown from "../display/FindiffDropDown";
 
 const LeftSidebar = ({analysisMode, setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis}:
     {
-        analysisMode: 'compare' | 'single', 
+        analysisMode: 'compare' | 'single' | 'chatbot', 
         setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
         setJobId: React.Dispatch<React.SetStateAction<string>>, 
-        setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single'>>, 
+        setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
         awaitingAnalysis: boolean
     }
 ) => {

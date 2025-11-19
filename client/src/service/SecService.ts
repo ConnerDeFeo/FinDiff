@@ -27,6 +27,12 @@ const secService = {
     },
     get10KAnalysisStatus: async (jobId: string) => {
         return await API.get(`${URL}/get_10k_analysis_status?jobId=${jobId}`);
+    },
+    generateResponse: async (prompt: string) => {
+        return await API.post(`${URL}/generate_response`, { prompt, cik:"", accessionNumber:"", primaryDocument:"" });
+    },
+    getChatbotStatus: async (jobId: string) => {
+        return await API.get(`${URL}/get_chatbot_status?jobId=${jobId}`);
     }
 }
 

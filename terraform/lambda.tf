@@ -54,7 +54,12 @@ locals {
     "generate_response_worker" = {
       source_dir  = "../server/lambdas/chatbot/generate_response_worker"
       output_path = "../server/lambdas/chatbot/zips/generate_response_worker.zip"
-      layers      = ["pinecone_utils", "dynamo", "filings"]
+      layers      = ["dynamo", "filings"]
+    },
+    "get_chatbot_status" = {
+      source_dir  = "../server/lambdas/chatbot/get_chatbot_status"
+      output_path = "../server/lambdas/chatbot/zips/get_chatbot_status.zip"
+      layers      = ["user_auth", "dynamo"]
     }
   }
   layers = {
@@ -73,10 +78,6 @@ locals {
     "filings"        = {
       source_dir  = "${path.module}/../server/layers/filings/"
       output_path = "${path.module}/../server/layers/filings/filings.zip"
-    },
-    "pinecone_utils" = {
-      source_dir  = "${path.module}/../server/layers/pinecone_utils/"
-      output_path = "${path.module}/../server/layers/pinecone_utils/pinecone_utils.zip"
     }
   }
 }

@@ -2,7 +2,6 @@
     "extraPaths": [
         "Server/layers/user_auth/python",
         "Server/layers/dynamo/python",
-        "Server/layers/filings/python",
-        "Server/layers/pinecone_utils/python"
+        "Server/layers/filings/python"
     ]
 }

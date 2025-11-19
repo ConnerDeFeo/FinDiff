@@ -12,8 +12,8 @@ def generate_response(event, context):
     try:
         prompt = body["prompt"]
         cik = body["cik"]
-        accession = body["accession"]
-        primaryDoc = body["primaryDoc"]
+        accession = body["accessionNumber"]
+        primaryDoc = body["primaryDocument"]
 
         job_id = str(uuid.uuid4())
 
