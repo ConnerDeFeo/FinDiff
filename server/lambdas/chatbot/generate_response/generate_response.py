@@ -36,26 +36,20 @@ def generate_response(event, context):
             'conversation_jobs',
             {
                 'job_id': job_id,
-                'progress': 'PROCESSING'
+                'status': 'PROCESSING'
             }
         )
 
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                'headers': auth_header
-            },
+            "headers": auth_header,
             "body": json.dumps(job_id)
         }
     except Exception as e:
         print(f"Error in generate_response: {e}")
         return {
             "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                'headers': auth_header
-            }
+            "headers": auth_header
         }
 
 

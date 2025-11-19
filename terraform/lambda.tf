@@ -154,7 +154,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = [aws_dynamodb_table.comparison_jobs.arn, aws_dynamodb_table.single_section_analysis_jobs.arn]
+        Resource = [aws_dynamodb_table.comparison_jobs.arn, aws_dynamodb_table.single_section_analysis_jobs.arn, aws_dynamodb_table.conversation_jobs.arn]
       }
     ]
   })

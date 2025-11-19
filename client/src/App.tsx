@@ -11,7 +11,7 @@ function App() {
   const [jobId, setJobId] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
   const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('compare');
-  // const [userInput, setUserInput] = useState<string>('');
+  const [userInput, setUserInput] = useState<string>('');
 
   useEffect(()=>{
     const poll = async (attempt: number) => {
@@ -54,14 +54,15 @@ function App() {
     }
   }, [jobId, analysisMode]);
 
-  // const handlePromptSubmit = async () => {
-  //   const resp = await secService.generateResponse(userInput);
-  //   if(resp.ok){
-  //     const jobId = await resp.json();
-  //     setJobId(jobId);
-  //     setUserInput('');
-  //   }
-  // }
+  const handlePromptSubmit = async () => {
+    setAnalysisMode('chatbot');
+    const resp = await secService.generateResponse(userInput);
+    if(resp.ok){
+      const jobId = await resp.json();
+      setJobId(jobId);
+      setUserInput('');
+    }
+  }
 
   return (
     <div className="h-screen findiff-bg-white flex overflow-hidden">
@@ -112,7 +113,7 @@ function App() {
         </div>
         
         {/* Text Input Area */}
-        {/* <div className="border-t border-gray-200 bg-white p-4">
+        <div className="border-t border-gray-200 bg-white p-4">
           <div className="max-w-5xl mx-auto">
             <textarea
               value={userInput}
@@ -129,7 +130,7 @@ function App() {
               Submit
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

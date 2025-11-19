@@ -1,6 +1,6 @@
 import json
 from dynamo import update_item
-from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response, get_requested_section, section_order
+from filings import extract_text_from_bedrock_response, section_order
 import boto3
 import asyncio
 
@@ -40,15 +40,18 @@ def get_relevant_sections(prompt: str) -> dict:
         res = {"sections": []}
     return res
 
-async def generate_response_worker(event, context):
-
-    def update_job_progress(progress):
+def generate_response_worker(event, context):
+    
+    def update_job_status(result, status):
         update_item(
             'conversation_jobs',
             key={'job_id': job_id},
-            update_expression='SET #progress = :progress',
-            expression_attribute_names={'#progress': 'progress'},
-            expression_attribute_values={':progress': progress}
+            update_expression='SET #status = :status, #result = :result',
+            expression_attribute_names={'#status': 'status', "#result": "result"},
+            expression_attribute_values={
+                ':status': status,
+                ':result': result
+            }
         )
 
     try:
@@ -61,7 +64,7 @@ async def generate_response_worker(event, context):
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
 
-        update_job_progress(f"SECTIONS_IDENTIFIED: {', '.join(sections)}")
+        update_job_status(f"SECTIONS_IDENTIFIED: {', '.join(sections)}", "COMPLETED")
     except Exception as e:
         print(f"Error in generate_response_worker: {e}")
-        update_job_progress("FAILED")
+        update_job_status("FAILED", "FAILED")

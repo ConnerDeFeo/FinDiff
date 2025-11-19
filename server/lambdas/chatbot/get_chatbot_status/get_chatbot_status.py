@@ -2,7 +2,7 @@ import json
 from user_auth import get_auth_header
 from dynamo import get_item
 
-def get_comparison_status(event, context):
+def get_chatbot_status(event, context):
     query_params = event.get('queryStringParameters', {})
     auth_header = get_auth_header()
     
