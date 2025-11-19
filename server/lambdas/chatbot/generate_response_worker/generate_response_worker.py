@@ -1,7 +1,8 @@
 from pinecone_utils import embed_text, fetch_existing_embeddings
 from dynamo import update_item
-from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response, section_order
+from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response, get_requested_section, section_order
 import boto3
+import asyncio
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
@@ -26,10 +27,19 @@ async def generate_response_worker(event, context):
 
         doc = fetch_10k_from_sec(f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession.replace('-', '')}/{primaryDoc}")
         text = parse_text_from_html(doc)
-        section_embedding_tasks = []
+        sections = {}
+        for section, _ in section_order:
+            section_text, _  = get_requested_section(text, section)
+            if section_text:
+                sections[section] = section_text
 
-        # Call the embedding function
-        await embed_text(cik, accession, primaryDoc, text)
+        section_embedding_tasks = []
+        for seciton in sections.keys():
+            section_embedding_tasks.append(
+                embed_text(cik, accession, primaryDoc, sections[seciton], metadata={"section": seciton})
+            )
+        await asyncio.gather(*section_embedding_tasks)
+
         matches = await fetch_existing_embeddings(cik, accession, primaryDoc, prompt)
         matches_data = [match['metadata']['text'] for match in matches]
 

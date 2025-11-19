@@ -4,114 +4,97 @@ locals {
     "compare_10k_filings" = {
       source_dir  = "../server/lambdas/comparison_analysis/compare_10k_filings"
       output_path = "../server/lambdas/comparison_analysis/zips/compare_10k_filings.zip"
+      layers      = ["user_auth", "dynamo"]
     },
     "compare_10k_filings_worker" = {
       source_dir  = "../server/lambdas/comparison_analysis/compare_10k_filings_worker"
       output_path = "../server/lambdas/comparison_analysis/zips/compare_10k_filings_worker.zip"
+      layers      = ["filings","dynamo"]
     },
     "search_tickers" = {
       source_dir  = "../server/lambdas/search/search_tickers"
       output_path = "../server/lambdas/search/zips/search_tickers.zip"
+      layers      = ["user_auth"]
     },
     "get_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/get_available_10k_filings"
       output_path = "../server/lambdas/search/zips/get_available_10k_filings.zip"
+      layers      = ["filings","user_auth"]
     },
     "get_comparison_status" = {
       source_dir  = "../server/lambdas/comparison_analysis/get_comparison_status"
       output_path = "../server/lambdas/comparison_analysis/zips/get_comparison_status.zip"
+      layers      = ["user_auth", "dynamo"]
     },
     "analyze_10k_section_worker" = {
       source_dir  = "../server/lambdas/single_analysis/analyze_10k_section_worker"
       output_path = "../server/lambdas/single_analysis/zips/analyze_10k_section_worker.zip"
+      layers      = ["filings","dynamo"]
     },
     "analyze_10k_section" = {
       source_dir  = "../server/lambdas/single_analysis/analyze_10k_section"
       output_path = "../server/lambdas/single_analysis/zips/analyze_10k_section.zip"
+      layers      = ["user_auth", "dynamo"]
     },
     "get_10k_analysis_status" = {
       source_dir  = "../server/lambdas/single_analysis/get_10k_analysis_status"
       output_path = "../server/lambdas/single_analysis/zips/get_10k_analysis_status.zip"
+      layers      = ["user_auth", "dynamo"]
     },
     "cache_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/cache_available_10k_filings"
       output_path = "../server/lambdas/search/zips/cache_available_10k_filings.zip"
+      layers      = ["filings","user_auth"]
     },
     "generate_response" = {
       source_dir  = "../server/lambdas/chatbot/generate_response"
       output_path = "../server/lambdas/chatbot/zips/generate_response.zip"
+      layers      = ["dynamo","user_auth"]
     },
     "generate_response_worker" = {
       source_dir  = "../server/lambdas/chatbot/generate_response_worker"
       output_path = "../server/lambdas/chatbot/zips/generate_response_worker.zip"
+      layers      = ["pinecone_utils", "dynamo", "filings"]
+    }
+  }
+  layers = {
+    "user_auth"      = {
+      source_dir  = "${path.module}/../server/layers/user_auth/"
+      output_path = "${path.module}/../server/layers/user_auth/user_auth.zip"
+    },
+    "dynamo"         = {
+      source_dir  = "${path.module}/../server/layers/dynamo/"
+      output_path = "${path.module}/../server/layers/dynamo/dynamodb.zip"
+    },
+    "utils"          = {
+      source_dir  = "${path.module}/../server/layers/utils/"
+      output_path = "${path.module}/../server/layers/utils/utils.zip"
+    },
+    "filings"        = {
+      source_dir  = "${path.module}/../server/layers/filings/"
+      output_path = "${path.module}/../server/layers/filings/filings.zip"
+    },
+    "pinecone_utils" = {
+      source_dir  = "${path.module}/../server/layers/pinecone_utils/"
+      output_path = "${path.module}/../server/layers/pinecone_utils/pinecone_utils.zip"
     }
   }
 }
 
 # Data layers
-data "archive_file" "user_auth_layer" {
+data "archive_file" "lambda_layers" {
+  for_each    = local.layers
   type        = "zip"
-  source_dir  = "${path.module}/../server/layers/user_auth/"
-  output_path = "${path.module}/../server/layers/user_auth/user_auth.zip"
+  source_dir  = each.value.source_dir
+  output_path = each.value.output_path
 }
 
-data "archive_file" "dynamo_layer" {
-  type        = "zip"
-  source_dir  = "${path.module}/../server/layers/dynamo/"
-  output_path = "${path.module}/../server/layers/dynamo/dynamodb.zip"
-}
-
-data "archive_file" "utils_layer" {
-  type        = "zip"
-  source_dir  = "${path.module}/../server/layers/utils/"
-  output_path = "${path.module}/../server/layers/utils/utils.zip"
-}
-
-data "archive_file" "filings_layer" {
-  type        = "zip"
-  source_dir  = "${path.module}/../server/layers/filings/"
-  output_path = "${path.module}/../server/layers/filings/filings.zip"
-}
-
-data "archive_file" "pinecone_utils_layer" {
-  type        = "zip"
-  source_dir  = "${path.module}/../server/layers/pinecone_utils/"
-  output_path = "${path.module}/../server/layers/pinecone_utils/pinecone_utils.zip"
-}
-
-resource "aws_lambda_layer_version" "user_auth" {
-  filename         = data.archive_file.user_auth_layer.output_path
-  layer_name       = "user_auth"
+resource "aws_lambda_layer_version" "lambda_layers" {
+  for_each            = local.layers
+  filename            = data.archive_file.lambda_layers[each.key].output_path
+  layer_name          = each.key
   compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.user_auth_layer.output_base64sha256
-}
-
-resource "aws_lambda_layer_version" "dynamo" {
-  filename         = data.archive_file.dynamo_layer.output_path
-  layer_name       = "dynamo"
-  compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.dynamo_layer.output_base64sha256
-}
-
-resource "aws_lambda_layer_version" "utils" {
-  filename         = data.archive_file.utils_layer.output_path
-  layer_name       = "utils"
-  compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.utils_layer.output_base64sha256
-}
-
-resource "aws_lambda_layer_version" "filings" {
-  filename         = data.archive_file.filings_layer.output_path
-  layer_name       = "filings"
-  compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.filings_layer.output_base64sha256
-}
-
-resource "aws_lambda_layer_version" "pinecone_utils" {
-  filename         = data.archive_file.pinecone_utils_layer.output_path
-  layer_name       = "pinecone_utils"
-  compatible_runtimes = ["python3.12"]
-  source_code_hash = data.archive_file.pinecone_utils_layer.output_base64sha256
+  source_code_hash    = data.archive_file.lambda_layers[each.key].output_base64sha256
 }
 
 # IAM role for Lambda
@@ -239,11 +222,11 @@ resource "aws_lambda_function" "lambdas" {
   timeout          = 500
   memory_size      = 512
 
-  layers           = [
-    aws_lambda_layer_version.user_auth.arn, 
-    aws_lambda_layer_version.dynamo.arn, 
-    aws_lambda_layer_version.utils.arn, 
-    aws_lambda_layer_version.filings.arn,
-    aws_lambda_layer_version.pinecone_utils.arn
-  ]
+  environment {
+    variables = {
+      PINECONE_API_KEY = var.pinecone_api_key
+    }
+  }
+
+  layers           = [for layer_name in each.value.layers : aws_lambda_layer_version.lambda_layers[layer_name].arn]
 }
