@@ -19,7 +19,7 @@ locals {
     "get_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/get_available_10k_filings"
       output_path = "../server/lambdas/search/zips/get_available_10k_filings.zip"
-      layers      = ["filings","user_auth"]
+      layers      = ["filings","user_auth", "utils"]
     },
     "get_comparison_status" = {
       source_dir  = "../server/lambdas/comparison_analysis/get_comparison_status"
