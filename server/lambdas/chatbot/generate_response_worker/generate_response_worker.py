@@ -1,4 +1,4 @@
-from pinecone_utils import embed_text, fetch_existing_embeddings
+import json
 from dynamo import update_item
 from filings import parse_text_from_html, fetch_10k_from_sec, extract_text_from_bedrock_response, get_requested_section, section_order
 import boto3
@@ -6,6 +6,39 @@ import asyncio
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+
+def call_bedrock_model(prompt: str) -> str:
+    response = bedrock.converse(
+        modelId = "openai.gpt-oss-120b-1:0",
+        messages=[
+            {
+                "role": "user", 
+                "content": [{"text": prompt}]
+            },
+        ],
+        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+    )
+    return extract_text_from_bedrock_response(response)
+
+def get_relevant_sections(prompt: str) -> dict:
+    available_sections = [section[0] for section in section_order]
+    response = call_bedrock_model(
+        f"""
+            You are an expert financial analyst. Based on the user prompt below,
+            identify up to three sections needed from a 10-K filing to best answer the prompt.
+            
+            User Prompt:
+            {prompt}
+            return your answer as a json object in the form:
+            {{
+                "sections": [list of sections from the following available sections: {', '.join(available_sections)}]
+            }}
+        """)
+    try:
+        res = json.loads(response)
+    except json.JSONDecodeError:
+        res = {"sections": []}
+    return res
 
 async def generate_response_worker(event, context):
 
@@ -25,43 +58,10 @@ async def generate_response_worker(event, context):
         prompt = event["prompt"]
         job_id = event["job_id"]
 
-        doc = fetch_10k_from_sec(f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession.replace('-', '')}/{primaryDoc}")
-        text = parse_text_from_html(doc)
-        sections = {}
-        for section, _ in section_order:
-            section_text, _  = get_requested_section(text, section)
-            if section_text:
-                sections[section] = section_text
+        # Parse user prompt to identify requested sections
+        sections = get_relevant_sections(prompt).get("sections", [])
 
-        section_embedding_tasks = []
-        for seciton in sections.keys():
-            section_embedding_tasks.append(
-                embed_text(cik, accession, primaryDoc, sections[seciton], metadata={"section": seciton})
-            )
-        await asyncio.gather(*section_embedding_tasks)
-
-        matches = await fetch_existing_embeddings(cik, accession, primaryDoc, prompt)
-        matches_data = [match['metadata']['text'] for match in matches]
-
-        response = bedrock.converse(
-            modelId = "openai.gpt-oss-120b-1:0",
-            messages=[
-                {
-                    "role": "user", 
-                    "content": [{"text": 
-                        f"""
-                            You are a value investing assistant. The user has typed the following prompt: "{prompt}".
-                            The following is the relevant information extracted from the company's latest 10-K filing:
-                            {" ".join(matches_data)}
-                        """
-                    }]
-                },
-            ],
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
-        )
-        response_text = extract_text_from_bedrock_response(response)
-
-        update_job_progress(response_text)
+        update_job_progress(f"SECTIONS_IDENTIFIED: {', '.join(sections)}")
     except Exception as e:
         print(f"Error in generate_response_worker: {e}")
         update_job_progress("FAILED")
