@@ -96,9 +96,9 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto p-8">
+          <div className="max-w-7xl mx-auto p-8">
             {(analysis || awaitingAnalysis) && (
-              <div className="bg-white rounded-xl shadow-lg p-8 border-t-4 findiff-border-primary-blue">
+              <div className="bg-white rounded-xl shadow-lg p-8">
                 { awaitingAnalysis ? 
                   <div className="flex flex-col justify-center items-center py-12">
                     <Spinner />
