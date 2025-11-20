@@ -3,7 +3,7 @@ import boto3
 
 bedrock = boto3.client('bedrock-runtime')
 
-def lambda_handler(event, context):
+def onMessage(event, context):
     connection_id = event['requestContext']['connectionId']
     domain_name = event['requestContext']['domainName']
     stage = event['requestContext']['stage']

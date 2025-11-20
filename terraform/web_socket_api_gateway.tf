@@ -47,7 +47,7 @@ resource "aws_apigatewayv2_integration" "onmessage" {
 
 resource "aws_apigatewayv2_route" "onmessage" {
   api_id    = aws_apigatewayv2_api.web_socket_api.id
-  route_key = "$default"
+  route_key = "onmessage"
   target    = "integrations/${aws_apigatewayv2_integration.onmessage.id}"
 }
 
@@ -74,4 +74,8 @@ resource "aws_lambda_permission" "apigw_websocket_onmessage" {
   function_name = aws_lambda_function.lambdas["onMessage"].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.web_socket_api.execution_arn}/*/*"
+}
+
+output "web_socket_api_endpoint" {
+  value = aws_apigatewayv2_api.web_socket_api.api_endpoint
 }

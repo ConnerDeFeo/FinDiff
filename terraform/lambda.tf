@@ -172,7 +172,8 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
         Resource = [
           aws_dynamodb_table.comparison_jobs.arn, 
           aws_dynamodb_table.single_section_analysis_jobs.arn, 
-          aws_dynamodb_table.conversation_jobs.arn
+          aws_dynamodb_table.conversation_jobs.arn,
+          aws_dynamodb_table.websocket_connections.arn
         ]
       }
     ]
@@ -215,6 +216,44 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
           "${aws_s3_bucket.company_filings.arn}",
           "${aws_s3_bucket.company_filings.arn}/*"
         ]
+      }
+    ]
+  })
+}
+
+# Allow lambda to invoke bedrock with streaming
+resource "aws_iam_role_policy" "bedrock_streaming" {
+  name = "bedrock_streaming_policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModelStream"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Allow lambda to send messages through API Gateway WebSocket
+resource "aws_iam_role_policy" "apigateway_management" {
+  name = "apigateway_management_policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "execute-api:ManageConnections"
+        ]
+        Resource = "${aws_apigatewayv2_api.web_socket_api.execution_arn}/*"
       }
     ]
   })

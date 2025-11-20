@@ -21,6 +21,31 @@ function App() {
   }[]>([]);
   const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
 
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+
+  useEffect(() => {
+    const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+
+    websocket.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'chunk') {
+        setAnalysis(prev => prev + data.text);
+        setAwaitingAnalysis(false);
+      }else if (data.type === 'complete') {
+        setAnalysis(prev => prev + '\n\n' + data.text);
+        setAwaitingAnalysis(false);
+      }
+    };
+
+    setWebSocket(websocket);
+
+    return () => websocket.close();
+  }, []);
+
   useEffect(()=>{
     const poll = async (attempt: number) => {
       if (attempt >= 150) {
@@ -63,19 +88,23 @@ function App() {
   }, [jobId, analysisMode]);
 
   const handlePromptSubmit = async () => {
-    if(selectedDocuments.length===1){
-      setAnalysisMode('chatbot');
-      const resp = await secService.generateResponse(
-        userInput, 
-        selectedStock!.cik_str, 
-        selectedDocuments[0].accessionNumber, 
-        selectedDocuments[0].primaryDocument
-      );
-      if(resp.ok){
-        const jobId = await resp.json();
-        setJobId(jobId);
-        setUserInput('');
-      }
+    if(selectedDocuments.length===1 && webSocket){
+      webSocket.send(JSON.stringify({
+        action: 'sendMessage',
+        message: userInput
+      }));
+      // setAnalysisMode('chatbot');
+      // const resp = await secService.generateResponse(
+      //   userInput, 
+      //   selectedStock!.cik_str, 
+      //   selectedDocuments[0].accessionNumber, 
+      //   selectedDocuments[0].primaryDocument
+      // );
+      // if(resp.ok){
+      //   const jobId = await resp.json();
+      //   setJobId(jobId);
+      //   setUserInput('');
+      // }
     }
   }
 
