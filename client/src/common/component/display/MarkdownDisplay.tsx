@@ -3,7 +3,7 @@ import remarkGfm from "remark-gfm";
 
 const MarkDownDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
   return (
-    <div className="rounded-lg p-8">
+    <div className="rounded-lg">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -23,7 +23,7 @@ const MarkDownDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
             <p className="my-2 leading-7 text-gray-800" {...props} />
           ),
           li: ({ node, ...props }) => (
-            <li className="list-disc  my-1 ml-4" {...props} />
+            <li className="list-disc  my-1 ml-6" {...props} />
           ),
 
           // ===== TABLES (FIXES TAILWIND RESET) =====

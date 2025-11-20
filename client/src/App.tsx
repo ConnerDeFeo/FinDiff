@@ -96,9 +96,9 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-8">
+          <div className="max-w-4xl mx-auto p-8">
             {(analysis || awaitingAnalysis) && (
-              <div className="bg-white rounded-xl shadow-lg p-8">
+              <>
                 { awaitingAnalysis ? 
                   <div className="flex flex-col justify-center items-center py-12">
                     <Spinner />
@@ -110,7 +110,7 @@ function App() {
                 {awaitingAnalysis &&
                   <p>{progress}</p>
                 }
-              </div>
+              </>
             )}
             {!analysis && !awaitingAnalysis && (
               <div className="flex items-center justify-center h-full">
@@ -131,22 +131,33 @@ function App() {
         </div>
         
         {/* Text Input Area */}
-        <div className="border-t border-gray-200 bg-white p-4">
-          <div className="max-w-5xl mx-auto">
+        <div className="w-4xl mx-auto fixed bottom-2 left-70 right-0 bg-white">
+          <div className="relative">
             <textarea
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               placeholder="Type your message here..."
-              className="w-full p-3 border-2 border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none transition-all"
+              className="
+                block w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 
+                focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none transition-all
+              "
               rows={3}
               onKeyDown={e => e.key === "Enter" ? handlePromptSubmit() : undefined}
             />
-            <button
-              onClick={handlePromptSubmit}
-              className="cursor-pointer mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Submit
-            </button>
+            <div className="absolute bottom-3 right-3">
+              <button
+                onClick={handlePromptSubmit}
+                disabled={!userInput.trim() || selectedDocuments.length !== 1 || awaitingAnalysis}
+                className={`
+                  px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
+                  hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
+                  transition-all cursor-pointer ${
+                  (!userInput.trim() || selectedDocuments.length !== 1 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>
+              </button>
+            </div>
           </div>
         </div>
       </div>

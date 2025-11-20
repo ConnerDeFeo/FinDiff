@@ -78,8 +78,8 @@ const SearchStock : React.FC<{onSelect: (stock: Stock) => void}> = ({ onSelect }
                     type="text"
                     value={ticker}
                     onChange={(e) => handleTypeTicker(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md p-2"
-                    placeholder="Enter ticker symbol or name..."
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    placeholder="Ticker symbol or name..."
                     onKeyDown={e=>e.key === "Enter" && handleSearchTicker()} 
                     onBlur={isMouseDown ? undefined : ()=>setDisplayResults(false)}
                 />
@@ -87,7 +87,7 @@ const SearchStock : React.FC<{onSelect: (stock: Stock) => void}> = ({ onSelect }
                 <img 
                     src="/images/Search.png" 
                     alt="Search" 
-                    className="absolute right-4 top-3 cursor-pointer h-5 w-5" 
+                    className="absolute right-3 top-3 cursor-pointer h-4 w-4" 
                     onClick={handleSearchTicker}  
                 />
             </div>
