@@ -64,7 +64,7 @@ async def generate_response_worker_async(event, context):
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
         summaires = [
-            get_10k_section_async(cik, accession, primaryDoc, section) 
+            get_10k_section_async(cik, accession.replace("-", ""), primaryDoc, section) 
             for section in sections
         ]
         section_texts = await asyncio.gather(*summaires)

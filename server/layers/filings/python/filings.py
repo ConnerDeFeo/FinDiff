@@ -219,6 +219,7 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
     Returns:
         The summarized section text
     """
+    print(f"Fetching section {section} for CIK {cik}, accession {accession}")
     # Define S3 cache keys
     raw_text_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}.txt"
     summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
