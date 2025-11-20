@@ -60,6 +60,21 @@ locals {
       source_dir  = "../server/lambdas/chatbot/get_chatbot_status"
       output_path = "../server/lambdas/chatbot/zips/get_chatbot_status.zip"
       layers      = ["user_auth", "dynamo"]
+    },
+    "onConnect" = {
+      source_dir  = "../server/lambdas/websocket/onConnect"
+      output_path = "../server/lambdas/websocket/zips/onConnect.zip"
+      layers      = ["dynamo"]
+    },
+    "onDisconnect" = {
+      source_dir  = "../server/lambdas/websocket/onDisconnect"
+      output_path = "../server/lambdas/websocket/zips/onDisconnect.zip"
+      layers      = ["dynamo"]
+    },
+    "onMessage" = {
+      source_dir  = "../server/lambdas/websocket/onMessage"
+      output_path = "../server/lambdas/websocket/zips/onMessage.zip"
+      layers      = []
     }
   }
   layers = {
@@ -154,7 +169,11 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = [aws_dynamodb_table.comparison_jobs.arn, aws_dynamodb_table.single_section_analysis_jobs.arn, aws_dynamodb_table.conversation_jobs.arn]
+        Resource = [
+          aws_dynamodb_table.comparison_jobs.arn, 
+          aws_dynamodb_table.single_section_analysis_jobs.arn, 
+          aws_dynamodb_table.conversation_jobs.arn
+        ]
       }
     ]
   })
