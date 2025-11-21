@@ -7,7 +7,7 @@ import { ImportantSections, Sections } from "../../variables/Sections";
 import FindiffDropDown from "../display/FindiffDropDown";
 
 
-const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock}:
+const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock, setAwaitingAnalysis}:
     {
         setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
         setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
@@ -26,9 +26,9 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
             year: string;
         }[]>>,
         setSelectedStock: React.Dispatch<React.SetStateAction<Stock | undefined>>,
+        setAwaitingAnalysis: React.Dispatch<React.SetStateAction<boolean>>
     }
 ) => {
-    const [jobId, setJobId] = useState<string>('');
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
@@ -58,9 +58,9 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
     
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
-        
         setAnalysis('');
-
+        setAwaitingAnalysis(true);
+        let data = {};
         if (selectedDocuments.length === 1) {
             // Single analysis
             setAnalysisMode('single');
@@ -70,12 +70,12 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
                 accessionNumber: doc.accessionNumber, 
                 primaryDocument: doc.primaryDocument
             };
-            const resp = await secService.analyze10KSection(stockData, selectedSection);
-            
-            if(resp.ok){
-                const jobId = await resp.json();
-                setJobId(jobId);
+            data = {
+                stock: stockData,
+                action: 'analyze_10k_section',
+                section: selectedSection,
             }
+
         } else if (selectedDocuments.length === 2) {
             // Comparison analysis
             setAnalysisMode('compare');
@@ -90,13 +90,44 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
                 accessionNumber: doc2.accessionNumber, 
                 primaryDocument: doc2.primaryDocument
             };
-            const resp = await secService.compare10KFilings(stockData1, stockData2, selectedSection);
-
-            if(resp.ok){
-                const jobId = await resp.json();
-                setJobId(jobId);
+            data = {
+                stock1: stockData1,
+                stock2: stockData2,
+                action: 'compare_10k_filings',
+                section: selectedSection,
             }
         }
+        const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL!);
+        websocket.onopen = () => {
+            console.log('WebSocket connection established');
+            websocket.send(JSON.stringify(data));
+        };
+
+        websocket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            
+            if (message.type === 'chunk') {
+                setAnalysis(prev => prev + message.data);
+                setAwaitingAnalysis(false);
+            } else if (message.type === 'complete') {
+                console.log('Stream complete');
+                websocket.close();
+            } else if (message.type === 'error') {
+                console.error('Error:', message.message);
+                websocket.close();
+                setAwaitingAnalysis(false);
+            }
+        };
+        
+        websocket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            websocket.close();
+            setAwaitingAnalysis(false);
+        };
+        
+        websocket.onclose = () => {
+            console.log('WebSocket disconnected');
+        };
     }
 
     const fetchAvailable10KFilings = async (cik:string) => {

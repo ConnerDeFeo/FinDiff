@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import './global.css'
 import MarkDownDisplay from "./common/component/display/MarkdownDisplay";
 import Spinner from "./common/component/display/Spinner";
@@ -18,43 +18,56 @@ function App() {
   }[]>([]);
   const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
 
-  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
-
-  useEffect(() => {
-    const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
-
-    websocket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
-
-    websocket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === 'chunk') {
-        setAnalysis(prev => prev + message.data);
-        setAwaitingAnalysis(false);
-      }
-    };
-
-    setWebSocket(websocket);
-
-    return () => websocket.close();
-  }, []);
-
+  // Handle prompt submissionq
   const handlePromptSubmit = async () => {
     setAnalysis('');
     setUserInput('');
     setAwaitingAnalysis(true);
-    if(selectedDocuments.length===1 && webSocket){
+    
+    if (selectedDocuments.length === 1) {
       setAnalysisMode('chatbot');
-      webSocket.send(JSON.stringify({
-        cik: selectedStock?.cik_str,
-        accession: selectedDocuments[0].accessionNumber,
-        primaryDoc: selectedDocuments[0].primaryDocument,
-        prompt: userInput,
-        action: 'generate_response'
-      }));
+      
+      // Create WebSocket on-demand
+      const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+      
+      websocket.onopen = () => {
+        console.log('WebSocket connection established');
+        websocket.send(JSON.stringify({
+          cik: selectedStock?.cik_str,
+          accession: selectedDocuments[0].accessionNumber,
+          primaryDoc: selectedDocuments[0].primaryDocument,
+          prompt: userInput,
+          action: 'generate_response'
+        }));
+      };
+      
+      websocket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === 'chunk') {
+          setAnalysis(prev => prev + message.data);
+          setAwaitingAnalysis(false);
+        } else if (message.type === 'complete') {
+          console.log('Stream complete');
+          websocket.close();
+        } else if (message.type === 'error') {
+          console.error('Error:', message.message);
+          websocket.close();
+          setAwaitingAnalysis(false);
+        }
+      };
+      
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        websocket.close();
+        setAwaitingAnalysis(false);
+      };
+      
+      websocket.onclose = () => {
+        console.log('WebSocket disconnected');
+      };
     }
-  }
+  };
 
   return (
     <div className="h-screen findiff-bg-white flex overflow-hidden">
@@ -67,6 +80,7 @@ function App() {
         setSelectedDocuments={setSelectedDocuments}
         selectedStock={selectedStock}
         setSelectedStock={setSelectedStock}
+        setAwaitingAnalysis={setAwaitingAnalysis}
       />
 
       {/* Main Content Area */}

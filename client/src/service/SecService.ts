@@ -19,21 +19,6 @@ const secService = {
     getComparisonStatus: async (jobId: string) => {
         return await API.get(`${URL}/get_comparison_status?jobId=${jobId}`);
     },
-    analyze10KSection: async (
-        stock: {cik: string, accessionNumber:string, primaryDocument:string},
-        section: string
-    )=>{
-        return await API.post(`${URL}/analyze_10k_section`, { stock, section });
-    },
-    get10KAnalysisStatus: async (jobId: string) => {
-        return await API.get(`${URL}/get_10k_analysis_status?jobId=${jobId}`);
-    },
-    generateResponse: async (prompt: string, cik: string, accessionNumber: string, primaryDocument: string) => {
-        return await API.post(`${URL}/generate_response`, { prompt, cik, accessionNumber, primaryDocument });
-    },
-    getChatbotStatus: async (jobId: string) => {
-        return await API.get(`${URL}/get_chatbot_status?jobId=${jobId}`);
-    }
 }
 
 export default secService;

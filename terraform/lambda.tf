@@ -2,14 +2,9 @@
 locals {
   lambda_function_locations = {
     "compare_10k_filings" = {
-      source_dir  = "../server/lambdas/comparison_analysis/compare_10k_filings"
-      output_path = "../server/lambdas/comparison_analysis/zips/compare_10k_filings.zip"
-      layers      = ["user_auth", "dynamo"]
-    },
-    "compare_10k_filings_worker" = {
-      source_dir  = "../server/lambdas/comparison_analysis/compare_10k_filings_worker"
-      output_path = "../server/lambdas/comparison_analysis/zips/compare_10k_filings_worker.zip"
-      layers      = ["filings","dynamo"]
+      source_dir  = "../server/lambdas/compare_10k_filings"
+      output_path = "../server/lambdas/zips/compare_10k_filings.zip"
+      layers      = ["filings"]
     },
     "search_tickers" = {
       source_dir  = "../server/lambdas/search/search_tickers"
@@ -21,25 +16,10 @@ locals {
       output_path = "../server/lambdas/search/zips/get_available_10k_filings.zip"
       layers      = ["filings","user_auth", "utils"]
     },
-    "get_comparison_status" = {
-      source_dir  = "../server/lambdas/comparison_analysis/get_comparison_status"
-      output_path = "../server/lambdas/comparison_analysis/zips/get_comparison_status.zip"
-      layers      = ["user_auth", "dynamo"]
-    },
-    "analyze_10k_section_worker" = {
-      source_dir  = "../server/lambdas/single_analysis/analyze_10k_section_worker"
-      output_path = "../server/lambdas/single_analysis/zips/analyze_10k_section_worker.zip"
-      layers      = ["filings","dynamo"]
-    },
     "analyze_10k_section" = {
-      source_dir  = "../server/lambdas/single_analysis/analyze_10k_section"
-      output_path = "../server/lambdas/single_analysis/zips/analyze_10k_section.zip"
-      layers      = ["user_auth", "dynamo"]
-    },
-    "get_10k_analysis_status" = {
-      source_dir  = "../server/lambdas/single_analysis/get_10k_analysis_status"
-      output_path = "../server/lambdas/single_analysis/zips/get_10k_analysis_status.zip"
-      layers      = ["user_auth", "dynamo"]
+      source_dir  = "../server/lambdas/analyze_10k_section"
+      output_path = "../server/lambdas/zips/analyze_10k_section.zip"
+      layers      = ["filings"]
     },
     "cache_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/cache_available_10k_filings"
@@ -155,11 +135,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = [
-          aws_dynamodb_table.comparison_jobs.arn, 
-          aws_dynamodb_table.single_section_analysis_jobs.arn, 
-          aws_dynamodb_table.websocket_connections.arn
-        ]
+        Resource = [aws_dynamodb_table.websocket_connections.arn]
       }
     ]
   })

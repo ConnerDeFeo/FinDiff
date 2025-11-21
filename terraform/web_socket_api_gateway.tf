@@ -2,7 +2,9 @@ locals{
   web_socket_lambda_function_locations = {
     "onConnect" = "$connect",
     "onDisconnect" = "$disconnect",
-    "generate_response" = "generate_response"
+    "generate_response" = "generate_response",
+    "analyze_10k_section" = "analyze_10k_section",
+    "compare_10k_filings" = "compare_10k_filings"
   }
 }
 
