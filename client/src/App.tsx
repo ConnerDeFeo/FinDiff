@@ -31,13 +31,15 @@ function App() {
     };
 
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'chunk') {
-        setAnalysis(prev => prev + data.text);
+      const message = JSON.parse(event.data);
+      console.log('Parsed message:', message);
+      if (message.type === 'message') {
+        setAnalysis(prev => prev + message.data);
         setAwaitingAnalysis(false);
-      }else if (data.type === 'complete') {
-        setAnalysis(prev => prev + '\n\n' + data.text);
-        setAwaitingAnalysis(false);
+      } else if (message.type === 'complete') {
+        console.log('Stream complete');
+      } else if (message.type === 'error') {
+        console.error('Error:', message.message);
       }
     };
 
@@ -90,7 +92,7 @@ function App() {
   const handlePromptSubmit = async () => {
     if(selectedDocuments.length===1 && webSocket){
       webSocket.send(JSON.stringify({
-        action: 'sendMessage',
+        action: 'onmessage',
         message: userInput
       }));
       // setAnalysisMode('chatbot');

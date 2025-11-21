@@ -145,7 +145,8 @@ resource "aws_iam_role_policy" "bedrock_policy" {
     Statement = [{
       Effect = "Allow"
       Action = [
-        "bedrock:InvokeModel"
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
       ]
       Resource = "*"
     }]
@@ -216,25 +217,6 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
           "${aws_s3_bucket.company_filings.arn}",
           "${aws_s3_bucket.company_filings.arn}/*"
         ]
-      }
-    ]
-  })
-}
-
-# Allow lambda to invoke bedrock with streaming
-resource "aws_iam_role_policy" "bedrock_streaming" {
-  name = "bedrock_streaming_policy"
-  role = aws_iam_role.lambda_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "bedrock:InvokeModelStream"
-        ]
-        Resource = "*"
       }
     ]
   })

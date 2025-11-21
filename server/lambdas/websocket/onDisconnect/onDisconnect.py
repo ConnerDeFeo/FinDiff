@@ -8,7 +8,7 @@ def onDisconnect(event, context):
 
     try:
         delete_item(TABLE_NAME, {
-            'connectionId': connection_id
+            'connection_id': connection_id
         })
         return {
             'statusCode': 200,

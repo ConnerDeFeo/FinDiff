@@ -9,8 +9,8 @@ def onConnect(event, context):
 
     try:
         put_item(TABLE_NAME, {
-            'connectionId': connection_id,
-            'connectedAt': int(time.time())
+            'connection_id': connection_id,
+            'connected_at': int(time.time())
         })
         return {
             'statusCode': 200,
