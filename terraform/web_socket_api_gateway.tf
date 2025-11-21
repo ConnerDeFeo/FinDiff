@@ -2,7 +2,7 @@ locals{
   web_socket_lambda_function_locations = {
     "onConnect" = "$connect",
     "onDisconnect" = "$disconnect",
-    "onMessage" = "onmessage"
+    "generate_response" = "generate_response"
   }
 }
 

@@ -7,10 +7,9 @@ import { ImportantSections, Sections } from "../../variables/Sections";
 import FindiffDropDown from "../display/FindiffDropDown";
 
 
-const LeftSidebar = ({ setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock}:
+const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock}:
     {
         setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
-        setJobId: React.Dispatch<React.SetStateAction<string>>, 
         setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
         awaitingAnalysis: boolean,
         selectedDocuments: {
@@ -29,6 +28,7 @@ const LeftSidebar = ({ setAnalysis, setJobId, setAnalysisMode, awaitingAnalysis,
         setSelectedStock: React.Dispatch<React.SetStateAction<Stock | undefined>>,
     }
 ) => {
+    const [jobId, setJobId] = useState<string>('');
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');

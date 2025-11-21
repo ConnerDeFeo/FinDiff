@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import './global.css'
-import secService from "./service/SecService";
 import MarkDownDisplay from "./common/component/display/MarkdownDisplay";
 import Spinner from "./common/component/display/Spinner";
 import LeftSidebar from "./common/component/main/LeftSidebar";
@@ -8,8 +7,6 @@ import type { Stock } from "./common/types/Stock";
 
 function App() {
   const [analysis, setAnalysis] = useState<string>('');
-  const [progress, setProgress] = useState<string>('');
-  const [jobId, setJobId] = useState<string>('');
   const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
   const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('chatbot');
   const [userInput, setUserInput] = useState<string>('');
@@ -32,14 +29,9 @@ function App() {
 
     websocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      console.log('Parsed message:', message);
-      if (message.type === 'message') {
+      if (message.type === 'chunk') {
         setAnalysis(prev => prev + message.data);
         setAwaitingAnalysis(false);
-      } else if (message.type === 'complete') {
-        console.log('Stream complete');
-      } else if (message.type === 'error') {
-        console.error('Error:', message.message);
       }
     };
 
@@ -48,65 +40,19 @@ function App() {
     return () => websocket.close();
   }, []);
 
-  useEffect(()=>{
-    const poll = async (attempt: number) => {
-      if (attempt >= 150) {
-        setAnalysis('Analysis timed out. Please try again later.');
-        setAwaitingAnalysis(false);
-        return;
-      }
-      setAwaitingAnalysis(true);
-      
-      const resp = analysisMode === 'compare' 
-        ? await secService.getComparisonStatus(jobId)
-        : analysisMode === 'single' ? 
-        await secService.get10KAnalysisStatus(jobId)
-        : 
-        await secService.getChatbotStatus(jobId);
-        
-      if(!resp.ok) {
-        setAnalysis('Error fetching analysis status.');
-        setAwaitingAnalysis(false);
-        return;
-      }
-      const job =  await resp.json();
-
-      if (job.status === 'COMPLETED' || job.status === 'FAILED') {
-        setAnalysis(job.result || 'Analysis failed.');
-        setAwaitingAnalysis(false);
-        return;
-      }
-      if(job.progress){
-        setProgress(job.progress);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      poll(attempt + 1);
-    };
-    if(jobId){
-      poll(0);
-      setJobId('');
-    }
-  }, [jobId, analysisMode]);
-
   const handlePromptSubmit = async () => {
+    setAnalysis('');
+    setUserInput('');
+    setAwaitingAnalysis(true);
     if(selectedDocuments.length===1 && webSocket){
+      setAnalysisMode('chatbot');
       webSocket.send(JSON.stringify({
-        action: 'onmessage',
-        message: userInput
+        cik: selectedStock?.cik_str,
+        accession: selectedDocuments[0].accessionNumber,
+        primaryDoc: selectedDocuments[0].primaryDocument,
+        prompt: userInput,
+        action: 'generate_response'
       }));
-      // setAnalysisMode('chatbot');
-      // const resp = await secService.generateResponse(
-      //   userInput, 
-      //   selectedStock!.cik_str, 
-      //   selectedDocuments[0].accessionNumber, 
-      //   selectedDocuments[0].primaryDocument
-      // );
-      // if(resp.ok){
-      //   const jobId = await resp.json();
-      //   setJobId(jobId);
-      //   setUserInput('');
-      // }
     }
   }
 
@@ -115,7 +61,6 @@ function App() {
       {/* Left Sidebar */}
       <LeftSidebar
         setAnalysis={setAnalysis}
-        setJobId={setJobId}
         setAnalysisMode={setAnalysisMode}
         awaitingAnalysis={awaitingAnalysis}
         selectedDocuments={selectedDocuments}
@@ -127,21 +72,14 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto p-8">
-            {(analysis || awaitingAnalysis) && (
-              <>
-                { awaitingAnalysis ? 
-                  <div className="flex flex-col justify-center items-center py-12">
-                    <Spinner />
-                    <p className="mt-4 text-gray-600">This may take a few moments.</p>
-                  </div>
-                  :
-                  <MarkDownDisplay markdown={analysis} />
-                }
-                {awaitingAnalysis &&
-                  <p>{progress}</p>
-                }
-              </>
+          <div className="max-w-4xl mx-auto p-8 mb-24">
+            {(analysis || awaitingAnalysis) && (awaitingAnalysis ? 
+                <div className="flex flex-col justify-center items-center py-12">
+                  <Spinner />
+                  <p className="mt-4 text-gray-600">This may take a few moments.</p>
+                </div>
+                :
+                <MarkDownDisplay markdown={analysis} />
             )}
             {!analysis && !awaitingAnalysis && (
               <div className="flex items-center justify-center h-full">

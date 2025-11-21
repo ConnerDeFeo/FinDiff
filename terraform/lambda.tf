@@ -47,19 +47,9 @@ locals {
       layers      = ["filings","user_auth"]
     },
     "generate_response" = {
-      source_dir  = "../server/lambdas/chatbot/generate_response"
-      output_path = "../server/lambdas/chatbot/zips/generate_response.zip"
-      layers      = ["dynamo","user_auth"]
-    },
-    "generate_response_worker" = {
-      source_dir  = "../server/lambdas/chatbot/generate_response_worker"
-      output_path = "../server/lambdas/chatbot/zips/generate_response_worker.zip"
-      layers      = ["dynamo", "filings"]
-    },
-    "get_chatbot_status" = {
-      source_dir  = "../server/lambdas/chatbot/get_chatbot_status"
-      output_path = "../server/lambdas/chatbot/zips/get_chatbot_status.zip"
-      layers      = ["user_auth", "dynamo"]
+      source_dir  = "../server/lambdas/generate_response"
+      output_path = "../server/lambdas/zips/generate_response.zip"
+      layers      = ["filings"]
     },
     "onConnect" = {
       source_dir  = "../server/lambdas/websocket/onConnect"
@@ -70,11 +60,6 @@ locals {
       source_dir  = "../server/lambdas/websocket/onDisconnect"
       output_path = "../server/lambdas/websocket/zips/onDisconnect.zip"
       layers      = ["dynamo"]
-    },
-    "onMessage" = {
-      source_dir  = "../server/lambdas/websocket/onMessage"
-      output_path = "../server/lambdas/websocket/zips/onMessage.zip"
-      layers      = []
     }
   }
   layers = {
@@ -173,7 +158,6 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
         Resource = [
           aws_dynamodb_table.comparison_jobs.arn, 
           aws_dynamodb_table.single_section_analysis_jobs.arn, 
-          aws_dynamodb_table.conversation_jobs.arn,
           aws_dynamodb_table.websocket_connections.arn
         ]
       }

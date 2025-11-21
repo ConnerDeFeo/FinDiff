@@ -32,23 +32,6 @@ resource "aws_dynamodb_table" "single_section_analysis_jobs" {
   }
 }
 
-# Create dynamodb table for user chatbot sessions
-resource "aws_dynamodb_table" "conversation_jobs" {
-  name         = "conversation_jobs"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "job_id"
-
-  attribute {
-    name = "job_id"
-    type = "S"
-  }
-
-  tags = {
-    Name        = "FinDiff Conversation Jobs"
-    Environment = "prod"
-  }
-}
-
 # DynamoDB table for storing websocket connections
 resource "aws_dynamodb_table" "websocket_connections" {
   name         = "websocket_connections"

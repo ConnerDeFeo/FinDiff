@@ -1,11 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from 'rehype-raw';
 
 const MarkDownDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
   return (
     <div className="rounded-lg">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={{
           // ===== HEADINGS =====
           h1: ({ node, ...props }) => (
@@ -44,6 +46,7 @@ const MarkDownDisplay: React.FC<{ markdown: string }> = ({ markdown }) => {
           ),
 
           strong: ({ node, ...props }) => <strong {...props} />,
+          br: ({ node, ...props }) => <br {...props} />
         }}
       >
         {markdown}
