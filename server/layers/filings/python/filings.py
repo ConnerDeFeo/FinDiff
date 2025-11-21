@@ -115,6 +115,7 @@ def get_requested_section(html_content, requested_section):
     if not matches:
         return "", 0
     section_start = matches[-1].start()
+    print("FOUND MATCHES: ", section_start)
     section_end = None
 
     # Find the start of the next section to determine the end of the current section
@@ -124,6 +125,7 @@ def get_requested_section(html_content, requested_section):
             section_end = matches[-1].start()
         end_index += 1
 
+    print("SECTION BOUNDS: ", section_start, section_end)
     # Extract and return the section text with token estimate
     if section_start is not None and section_end is not None:
         section_text = full_text[section_start:section_end].strip()

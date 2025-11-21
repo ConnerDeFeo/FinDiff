@@ -24,7 +24,7 @@ function App() {
     setUserInput('');
     setAwaitingAnalysis(true);
     
-    if (selectedDocuments.length === 1) {
+    if (selectedDocuments.length >= 1) {
       setAnalysisMode('chatbot');
       
       // Create WebSocket on-demand
