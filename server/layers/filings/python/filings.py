@@ -114,8 +114,7 @@ def get_requested_section(html_content, requested_section):
     matches = list(re.finditer(section_order[start_index][1], full_text, re.IGNORECASE))
     if not matches:
         return "", 0
-    section_start = matches[-1].start()
-    print("FOUND MATCHES: ", section_start)
+    section_start = matches[1].start() if len(matches) > 1 else matches[0].start()
     section_end = None
 
     # Find the start of the next section to determine the end of the current section
@@ -125,7 +124,6 @@ def get_requested_section(html_content, requested_section):
             section_end = matches[-1].start()
         end_index += 1
 
-    print("SECTION BOUNDS: ", section_start, section_end)
     # Extract and return the section text with token estimate
     if section_start is not None and section_end is not None:
         section_text = full_text[section_start:section_end].strip()
@@ -189,7 +187,7 @@ async def summarize_section(text, text_tokens, section, summary_key):
                             Create a detailed summary of this {section} section chunk from a 10K filing. 
                             Preserve ALL key facts, financial figures, risks, metrics, and business 
                             details. Do NOT shorten aggressively. Write a concise, comprehensive 
-                            summary that retains all information in an organized form. 
+                            summary that retains all information from the {section} section in an organized form. 
                             This summary should be nearly lossless and allow another AI to 
                             reconstruct any part of the original content.
 
@@ -221,7 +219,6 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
     Returns:
         The summarized section text
     """
-    print(f"Fetching section {section} for CIK {cik}, accession {accession}")
     # Define S3 cache keys
     raw_text_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}.txt"
     summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
