@@ -6,7 +6,7 @@ import asyncio
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
 
-async def generate_response_async(event, context):
+async def generate_multi_context_response_async(event, context):
     connection_id = event['requestContext']['connectionId']
     domain_name = event['requestContext']['domainName']
     stage = event['requestContext']['stage']
@@ -18,17 +18,20 @@ async def generate_response_async(event, context):
 
     try:
         # Extract parameters from event
-        cik = body["cik"]
-        accession = body["accession"]
-        primaryDoc = body["primaryDoc"]
+        stocks = body["stocks"] # {cik, accession, primaryDoc}[]
         prompt = body["prompt"]
 
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
-        summaires = [
-            get_10k_section_async(cik, accession.replace("-", ""), primaryDoc, section) 
-            for section in sections
-        ]
+        summaires = []
+        for stock in stocks:
+            cik = stock["cik"]
+            accession = stock["accession"]
+            primaryDoc = stock["primaryDoc"]
+            for section in sections:
+                summaires.append(
+                    get_10k_section_async(cik, accession.replace("-", ""), primaryDoc, section)
+                )
         section_texts = await asyncio.gather(*summaires)
 
         response = bedrock.converse_stream(
@@ -37,22 +40,22 @@ async def generate_response_async(event, context):
                 {
                     "role": "user", 
                     "content": [{"text": f"""
-                        You are an expert financial analyst.
-                        Below is the USER QUESTION. Your job is to answer the question directly and completely. 
-                        Sections of a 10-K filing have been extracted to help you answer the question.         
-                        
-                        # USER PROMPT
+                        You are an expert financial analyst. Using the following extracted sections from multiple 10-K filings,
+                        provide a detailed response to the user's prompt below.
+
+                        User Prompt:
                         {prompt}
 
                         Extracted Sections:
-                        {"\n".join([f"Section: {sections[i]}\nContent: {section_texts[i]}" for i in range(len(sections))])}
+                        {"\n".join([f"Section: {sections[i % len(sections)]}\nContent: {section_texts[i]}" for i in range(len(section_texts))])}
 
                         If any section is missing its content or references another section for context, note that in your response.
+                        Provide your answer in a clear and concise manner.
                         Provide your answer in markdown format.
                     """}]
                 },
             ],
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0.75}
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
         )
         stream = response.get('stream')
         if stream:
@@ -81,5 +84,5 @@ async def generate_response_async(event, context):
             Data=json.dumps({'type': 'error', 'data': str(e)})
         )
 
-def generate_response(event, context):
-    return asyncio.run(generate_response_async(event, context))
+def generate_multi_context_response(event, context):
+    return asyncio.run(generate_multi_context_response_async(event, context))

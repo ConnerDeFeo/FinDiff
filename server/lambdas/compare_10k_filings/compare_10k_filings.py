@@ -6,7 +6,7 @@ import json
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
-bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
 
 async def compare_10k_filings_async(event, context):
     """
@@ -74,7 +74,7 @@ async def compare_10k_filings_async(event, context):
         
         # Use Bedrock AI to compare the sections and generate insights
         response = bedrock.converse_stream(
-            modelId = "openai.gpt-oss-120b-1:0",
+            modelId = "openai.gpt-oss-20b-1:0",
             messages=[
                 {
                     "role": "user", 

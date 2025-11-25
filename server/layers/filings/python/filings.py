@@ -1,3 +1,5 @@
+import asyncio
+import json
 import httpx
 import re
 from bs4 import BeautifulSoup
@@ -7,7 +9,7 @@ import boto3
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 BUCKET_NAME = 'findiff-bucket-prod'
-bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
 s3 = boto3.client('s3')
 # Define all 10-K sections in order with regex patterns
 section_order = [
@@ -51,7 +53,13 @@ def get_object(key: str) -> bytes:
     response = s3.get_object(Bucket=BUCKET_NAME, Key=key)
     return response['Body'].read()
 
-# Fetch 10-K filing from SEC EDGAR
+async def bedrock_converse_async(**kwargs):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        lambda: bedrock.converse(**kwargs)
+    )
+
 async def fetch_10k_from_sec(url):
     """
     Asynchronously fetch a 10-K filing from the SEC EDGAR system.
@@ -120,14 +128,20 @@ def get_requested_section(html_content, requested_section):
     # Find the start of the next section to determine the end of the current section
     while not section_end and end_index < len(section_order):
         matches = list(re.finditer(section_order[end_index][1], full_text, re.IGNORECASE))
+        i = 0
         if matches:
-            section_end = matches[-1].start()
+            section_end = matches[0].start()
+        while section_end is not None and i<len(matches) and section_end <= section_start:
+            section_end = matches[i].start()
+            i += 1
+        if section_end is not None and section_end < section_start:
+            section_end = None
         end_index += 1
 
     # Extract and return the section text with token estimate
     if section_start is not None and section_end is not None:
         section_text = full_text[section_start:section_end].strip()
-        token_count = len(section_text.split())  # Rough token estimate
+        token_count = len(section_text) // 4  # Rough token estimate
         return section_text, token_count
     return "", 0
 
@@ -166,44 +180,80 @@ async def summarize_section(text, text_tokens, section, summary_key):
     Returns:
         The summarized text
     """
+    print(f"Summarizing section {section} with {text_tokens} tokens.")
     # If section is too large, split and recursively summarize
     if text_tokens > MAX_SECTION_TOKENS:
+        print(f"Section too large ({text_tokens} tokens). Splitting and summarizing in parts.")
         midway = len(text) // 2
         # Add overlap to prevent losing context at split point
-        first_half = text[:midway+100]
-        second_half = text[midway-100:]
-        
-        # Recursively summarize each half and combine
-        response = f"{await summarize_section(first_half, len(first_half) / 4, section, summary_key)}\n\n{await summarize_section(second_half, len(second_half) / 4, section, summary_key)}"
-    else:
-        # Section is small enough, summarize directly
-        response = bedrock.converse(
-            modelId = "openai.gpt-oss-120b-1:0",
-            messages=[
-                {
-                    "role": "user", 
-                    "content": [{"text": 
-                        f"""
-                            Create a detailed summary of this {section} section chunk from a 10K filing. 
-                            Preserve ALL key facts, financial figures, risks, metrics, and business 
-                            details. Do NOT shorten aggressively. Write a concise, comprehensive 
-                            summary that retains all information from the {section} section in an organized form. 
-                            This summary should be nearly lossless and allow another AI to 
-                            reconstruct any part of the original content.
+        tasks = []
+        first_half = text[:midway + 100]
+        second_half = text[midway - 100:]
+        tasks.append(summarize_section(first_half, len(first_half.split()), section, summary_key + "_part1"))
+        tasks.append(summarize_section(second_half, len(second_half.split()), section, summary_key + "_part2"))
+        first_half, second_half = await asyncio.gather(*tasks)
+        text = first_half + "\n\n" + second_half
+    # Section is small enough, summarize directly
+    response = await bedrock_converse_async(
+        modelId = "openai.gpt-oss-20b-1:0",
+        messages=[
+            {
+                "role": "user", 
+                "content": [{"text": 
+                    f"""
+                        Create a detailed summary of this {section} section chunk from a 10K filing. 
+                        Preserve ALL key facts, financial figures, risks, metrics, and business 
+                        details. Do NOT shorten aggressively. Write a concise, comprehensive 
+                        summary that retains all information from the {section} section in an organized form. 
+                        This summary should be nearly lossless and allow another AI to 
+                        reconstruct any part of the original content.
 
-                            Section Text:
-                            {text}
-                        """
-                    }]
-                },
-            ],
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
-        )
-        response = extract_text_from_bedrock_response(response)
-        
-        # Cache the summary in S3
-        put_object(summary_key, response.encode('utf-8'))
+                        Section Text:
+                        {text}
+                    """
+                }]
+            },
+        ],
+        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+    )
+    response = extract_text_from_bedrock_response(response)
+    
+    # Cache the summary in S3
+    put_object(summary_key, response.encode('utf-8'))
     return response
+
+def get_relevant_sections(prompt: str) -> dict:
+    available_sections = [section[0] for section in section_order]
+    response = bedrock.converse(
+        modelId = "openai.gpt-oss-20b-1:0",
+        messages=[
+            {
+                "role": "user", 
+                "content": [{"text": f"""
+                    You are an expert financial analyst. Based on the user prompt below,
+                    identify up to three sections needed from a 10-K filing to best answer the prompt.
+                    
+                    User Prompt:
+                    {prompt}
+
+                    return your answer as a json object in the form:
+                    {{
+                        "sections": [list of sections from the following available sections: {', '.join(available_sections)}]
+                    }}"""
+                }]
+            },
+        ],
+        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+    )
+    response = extract_text_from_bedrock_response(response)
+    print(f"get_relevant_sections response: {response}")
+    clean = response.strip()
+    clean = clean.replace("```json", "").replace("```", "").strip()
+    try:
+        res = json.loads(clean)
+    except json.JSONDecodeError:
+        res = {"sections": []}
+    return res
 
 async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, section: str) -> str:
     """
@@ -235,14 +285,9 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
     
     # Extract the requested section
     text, tokens = get_requested_section(doc, section)
+    put_object(raw_text_key, text.encode('utf-8'))
     
     # Summarize the section
     summarization = await summarize_section(text, tokens, section, summary_key)
-    
-    # If section was too large and got summarized, use summary as raw text
-    if tokens > MAX_SECTION_TOKENS:
-        text = summarization
-    
-    # Cache the raw text in S3
-    put_object(raw_text_key, text.encode('utf-8'))
+
     return summarization

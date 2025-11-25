@@ -29,16 +29,25 @@ function App() {
       
       // Create WebSocket on-demand
       const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+      const payload = selectedDocuments.length === 1 ? {
+        action: 'generate_response',
+        cik: selectedStock?.cik_str,
+        accession: selectedDocuments[0].accessionNumber,
+        primaryDoc: selectedDocuments[0].primaryDocument,
+        prompt: userInput
+      } : {
+        action: "generate_multi_context_response",
+        stocks: selectedDocuments.map(doc => ({
+          cik: selectedStock?.cik_str,
+          accession: doc.accessionNumber,
+          primaryDoc: doc.primaryDocument
+        })),
+        prompt: userInput
+      };
       
       websocket.onopen = () => {
         console.log('WebSocket connection established');
-        websocket.send(JSON.stringify({
-          cik: selectedStock?.cik_str,
-          accession: selectedDocuments[0].accessionNumber,
-          primaryDoc: selectedDocuments[0].primaryDocument,
-          prompt: userInput,
-          action: 'generate_response'
-        }));
+        websocket.send(JSON.stringify(payload));
       };
       
       websocket.onmessage = (event) => {
@@ -130,12 +139,12 @@ function App() {
             <div className="absolute bottom-3 right-3">
               <button
                 onClick={handlePromptSubmit}
-                disabled={!userInput.trim() || selectedDocuments.length !== 1 || awaitingAnalysis}
+                disabled={!userInput.trim() || selectedDocuments.length <= 1 || awaitingAnalysis}
                 className={`
                   px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
                   hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
                   transition-all cursor-pointer ${
-                  (!userInput.trim() || selectedDocuments.length !== 1 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
+                  (!userInput.trim() || selectedDocuments.length <= 1 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>

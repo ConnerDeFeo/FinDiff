@@ -31,6 +31,11 @@ locals {
       output_path = "../server/lambdas/zips/generate_response.zip"
       layers      = ["filings"]
     },
+    "generate_multi_context_response" = {
+      source_dir  = "../server/lambdas/generate_multi_context_response"
+      output_path = "../server/lambdas/zips/generate_multi_context_response.zip"
+      layers      = ["filings"]
+    },
     "onConnect" = {
       source_dir  = "../server/lambdas/websocket/onConnect"
       output_path = "../server/lambdas/websocket/zips/onConnect.zip"

@@ -6,7 +6,7 @@ import json
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
-bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
 
 async def analyze_10k_section_async(event, context):
     connection_id = event['requestContext']['connectionId']
@@ -45,7 +45,7 @@ async def analyze_10k_section_async(event, context):
             return
 
         response = bedrock.converse_stream(
-            modelId = "openai.gpt-oss-120b-1:0",
+            modelId = "openai.gpt-oss-20b-1:0",
             messages=[
                 {
                     "role": "user", 
