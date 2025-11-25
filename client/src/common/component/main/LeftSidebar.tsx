@@ -99,7 +99,6 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
         }
         const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL!);
         websocket.onopen = () => {
-            console.log('WebSocket connection established');
             websocket.send(JSON.stringify(data));
         };
 
@@ -110,7 +109,6 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
                 setAnalysis(prev => prev + message.data);
                 setAwaitingAnalysis(false);
             } else if (message.type === 'complete') {
-                console.log('Stream complete');
                 websocket.close();
             } else if (message.type === 'error') {
                 console.error('Error:', message.message);
@@ -123,10 +121,6 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
             console.error('WebSocket error:', error);
             websocket.close();
             setAwaitingAnalysis(false);
-        };
-        
-        websocket.onclose = () => {
-            console.log('WebSocket disconnected');
         };
     }
 

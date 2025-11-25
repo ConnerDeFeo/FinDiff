@@ -46,7 +46,6 @@ function App() {
       };
       
       websocket.onopen = () => {
-        console.log('WebSocket connection established');
         websocket.send(JSON.stringify(payload));
       };
       
@@ -57,7 +56,6 @@ function App() {
           setAnalysis(prev => prev + message.data);
           setAwaitingAnalysis(false);
         } else if (message.type === 'complete') {
-          console.log('Stream complete');
           websocket.close();
         } else if (message.type === 'error') {
           console.error('Error:', message.message);
@@ -70,10 +68,6 @@ function App() {
         console.error('WebSocket error:', error);
         websocket.close();
         setAwaitingAnalysis(false);
-      };
-      
-      websocket.onclose = () => {
-        console.log('WebSocket disconnected');
       };
     }
   };
@@ -139,12 +133,12 @@ function App() {
             <div className="absolute bottom-3 right-3">
               <button
                 onClick={handlePromptSubmit}
-                disabled={!userInput.trim() || selectedDocuments.length <= 1 || awaitingAnalysis}
+                disabled={!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis}
                 className={`
                   px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
                   hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
                   transition-all cursor-pointer ${
-                  (!userInput.trim() || selectedDocuments.length <= 1 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
+                  (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>
