@@ -19,6 +19,9 @@ const secService = {
     getComparisonStatus: async (jobId: string) => {
         return await API.get(`${URL}/get_comparison_status?jobId=${jobId}`);
     },
+    checkDocumentProcessed: async (cik: string, accessionNumber: string, primaryDocument: string) => {
+        return await API.get(`${URL}/check_document_processed?cik=${cik}&accession=${accessionNumber}&primaryDoc=${primaryDocument}`);
+    }
 }
 
 export default secService;

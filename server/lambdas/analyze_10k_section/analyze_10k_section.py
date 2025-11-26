@@ -65,7 +65,10 @@ async def analyze_10k_section_async(event, context):
                     }]
                 },
             ],
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0},
+            additionalModelRequestFields={
+                "reasoning_effort": "low"
+            }
         )
         
         stream = response.get('stream')

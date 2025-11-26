@@ -7,7 +7,7 @@ import boto3
 
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
-OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
+OUTPUT_TOKENS = 32000  # Maximum output tokens for Bedrock responses
 BUCKET_NAME = 'findiff-bucket-prod'
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
 s3 = boto3.client('s3')
@@ -26,7 +26,10 @@ section_order = [
     ("selected_financial_data", r"Item\s+6\s*[\.:-]\s*Selected Financial Data"),
     ("managements_discussion_and_analysis", r"Item\s+7\s*[\.:-]\s*Management.s Discussion and Analysis"),
     ("quantitative_and_qualitative_disclosures", r"Item\s+7A\s*[\.:-]\s*Quantitative"),
-    ("financial_statements_and_supplementary_data", r"Item\s+8\s*[\.:-]\s*Financial Statements and Supplementary Data"),
+
+    # Note not the entire section 8 becuase its massive
+    ('notes_to_financial_statements', r'notes?\s+to\s+(?:the\s+)?(?:consolidated\s+)?financial\s+statements?'),
+
     ("changes_in_and_disagreements_with_accountants", r"Item\s+9\s*[\.:-]\s*Changes in and Disagreements"),
     ("controls_and_procedures", r"Item\s+9A\s*[\.:-]\s*Controls and Procedures"),
     ("other_information", r"Item\s+9B\s*[\.:-]\s*Other Information"),
@@ -116,11 +119,61 @@ def get_requested_section(full_text, requested_section):
     if start_index is None:
         return "", 0  # Section not found
     end_index = start_index + 1
-
+    def is_valid_match(match, text):
+        """Check if a match is surrounded by quotes or is a reference (e.g., 'See Item...')"""
+        start = match.start()
+        end = match.end()
+        
+        # Check character before (if exists)
+        before = text[start - 1] if start > 0 else ''
+        # Check character after (if exists)
+        after = text[end] if end < len(text) else ''
+        
+        # Check for both single and double quotes
+        if (before in ['"', "'"] and after in ['"', "'"]) or \
+        (before == '"' or after == '"') or \
+        (before == "'" or after == "'"):
+            return False
+        
+        # Check for "See Item" references - look at text before the match
+        # Look back up to 50 characters to catch "See Item X" patterns
+        lookback_start = max(0, start - 50)
+        context_before = text[lookback_start:start].lower()
+        
+        # Common reference patterns
+        reference_patterns = [
+            'see',
+            'see item',
+            'see item',
+            'see part',
+            'refer to item',
+            'see also item',
+            'described in item',
+            'discussed in item',
+            'included in item',
+            'contained in item',
+        ]
+        
+        # Check if any reference pattern appears right before the match
+        for pattern in reference_patterns:
+            if pattern in context_before:
+                return False
+        
+        return True
+        
     matches = list(re.finditer(section_order[start_index][1], full_text, re.IGNORECASE))
     if not matches:
         return "", 0
-    section_start = matches[1].start() if len(matches) > 1 else matches[0].start()
+    if len(matches) == 1:
+        section_start = matches[0].start()
+    else:
+        matches = matches[1:] # Remove start index
+        # Filter out quoted matches and find the first unquoted match
+        valid_matches = [m for m in matches if is_valid_match(m, full_text)]
+        
+        if not valid_matches:
+            return "", 0
+        section_start = valid_matches[0].start()
     section_end = None
 
     # Find the start of the next section to determine the end of the current section
@@ -139,7 +192,7 @@ def get_requested_section(full_text, requested_section):
     # Extract and return the section text with token estimate
     if section_start is not None and section_end is not None:
         section_text = full_text[section_start:section_end].strip()
-        token_count = len(section_text) // 4  # Rough token estimate
+        token_count = len(section_text) // 3.5
         return section_text, token_count
     return "", 0
 
@@ -212,7 +265,10 @@ async def summarize_section(text, text_tokens, section, summary_key):
                 }]
             },
         ],
-        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0},
+        additionalModelRequestFields={
+            "reasoning_effort": "low"
+        }
     )
     response = extract_text_from_bedrock_response(response)
     
@@ -241,7 +297,10 @@ def get_relevant_sections(prompt: str) -> dict:
                 }]
             },
         ],
-        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
+        inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0},
+        additionalModelRequestFields={
+            "reasoning_effort": "low"
+        }
     )
     response = extract_text_from_bedrock_response(response)
     clean = response.strip()
@@ -255,7 +314,7 @@ def get_relevant_sections(prompt: str) -> dict:
 async def get_requested_section_summarization(full_text: str, section: str, raw_text_key: str, summary_key: str) -> str:
     text, tokens = get_requested_section(full_text, section)
     if tokens == 0:
-        raise ValueError("Could not extract the requested section from the filing.")
+        return "Could not extract the requested section from the filing."
     # Extract the requested section
     put_object(raw_text_key, text.encode('utf-8'))
     

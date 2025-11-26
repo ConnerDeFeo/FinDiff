@@ -49,7 +49,7 @@ locals {
     "check_document_processed" = {
       source_dir  = "../server/lambdas/check_document_processed"
       output_path = "../server/lambdas/zips/check_document_processed.zip"
-      layers      = ["dynamo"]
+      layers      = ["dynamo", "user_auth" ]
     },
     "upload_document" = {
       source_dir  = "../server/lambdas/upload_document"
@@ -150,7 +150,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = [aws_dynamodb_table.websocket_connections.arn]
+        Resource = [aws_dynamodb_table.websocket_connections.arn, aws_dynamodb_table.processed_documents.arn]
       }
     ]
   })

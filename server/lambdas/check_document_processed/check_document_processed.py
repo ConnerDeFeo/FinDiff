@@ -1,8 +1,10 @@
 import json
 from dynamo import get_item
+from user_auth import get_auth_header
 
 def check_document_processed(event, context):
     query_params = event.get('queryStringParameters', {})
+    auth_header = get_auth_header()
 
     try:
         cik = query_params['cik']
@@ -17,11 +19,13 @@ def check_document_processed(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'processed': response is not None and "Item" in response})
+            'body': json.dumps({'processed': response is not None and "Item" in response}),
+            'headers': auth_header
         }
     except Exception as e:
         print(f"Error in check_document_processed: {e}")
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e)}),
+            'headers': auth_header
         }

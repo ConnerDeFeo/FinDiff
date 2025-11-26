@@ -48,7 +48,10 @@ async def generate_response_async(event, context):
                     """}]
                 },
             ],
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0.75}
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0.75},
+            additionalModelRequestFields={
+                "reasoning_effort": "low"
+            }
         )
         stream = response.get('stream')
         if stream:

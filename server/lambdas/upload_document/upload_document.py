@@ -4,7 +4,7 @@ from filings import section_order, fetch_10k_from_sec, parse_text_from_html, get
 from dynamo import put_item
 import asyncio
 
-async def upload_document(event, context):
+async def upload_document_async(event, context):
     connection_id = event['requestContext']['connectionId']
     domain_name = event['requestContext']['domainName']
     stage = event['requestContext']['stage']
@@ -19,8 +19,10 @@ async def upload_document(event, context):
         cik = body["cik"]
         accession = body["accession"]
         primaryDoc = body["primaryDoc"]
+        accession = accession.replace("-", "")
 
         sections = [data[0] for data in section_order]
+        sections.pop() # Remove exhibits section
 
         url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primaryDoc}"
         doc = await fetch_10k_from_sec(url)
@@ -39,26 +41,29 @@ async def upload_document(event, context):
             completed_count += 1
             # Send progress update to client
             progress_message = {
-                "type": "progress_update",
+                "type": "update",
                 "completed": completed_count,
                 "total": total_tasks
             }
-            await apigateway.post_to_connection(
-                Data=json.dumps(progress_message),
-                ConnectionId=connection_id
-            )
-        # Send final completion message
-        completion_message = {
-            "type": "complete",
-            "message": "Document processing complete."
-        }
+            try:
+                apigateway.post_to_connection(
+                    Data=json.dumps(progress_message),
+                    ConnectionId=connection_id
+                )
+            except apigateway.exceptions.GoneException:
+                pass # Client disconnected, continue processing
+        
+        # Mark document as processed in DynamoDB
         put_item('processed_documents', {
             'document_id': f"{cik}_{accession}_{primaryDoc}",
             "status": "processed"
         })
 
-        await apigateway.post_to_connection(
-            Data=json.dumps(completion_message),
+        apigateway.post_to_connection(
+            Data=json.dumps({
+                "type": "complete",
+                "message": "Document processing complete."
+            }),
             ConnectionId=connection_id
         )
     except Exception as e:
@@ -67,7 +72,10 @@ async def upload_document(event, context):
             "type": "error",
             "message": str(e)
         }
-        await apigateway.post_to_connection(
+        apigateway.post_to_connection(
             Data=json.dumps(error_message),
             ConnectionId=connection_id
         )
+
+def upload_document(event,context):
+    return asyncio.run(upload_document_async(event,context))
