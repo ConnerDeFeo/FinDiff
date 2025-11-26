@@ -1,5 +1,5 @@
 import json
-from filings import get_10k_section_async, get_relevant_sections
+from filings import get_multiple_10k_sections_async, get_relevant_sections
 import boto3
 import asyncio
 
@@ -23,15 +23,16 @@ async def generate_multi_context_response_async(event, context):
 
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
-        summaires = []
+        summaires = [] # list of dictionaries {section: summary text} for each stock
         for stock in stocks:
             cik = stock["cik"]
             accession = stock["accession"]
             primaryDoc = stock["primaryDoc"]
-            for section in sections:
-                summaires.append(
-                    get_10k_section_async(cik, accession.replace("-", ""), primaryDoc, section)
+            summaires.append(
+                get_multiple_10k_sections_async(
+                    cik, accession.replace("-", ""), primaryDoc, sections
                 )
+            )
         section_texts = await asyncio.gather(*summaires)
 
         response = bedrock.converse_stream(
@@ -47,7 +48,7 @@ async def generate_multi_context_response_async(event, context):
                         {prompt}
 
                         Extracted Sections:
-                        {"\n".join([f"Section: {sections[i % len(sections)]}\nContent: {section_texts[i]}" for i in range(len(section_texts))])}
+                        {json.dumps(section_texts, indent=2)}
 
                         If any section is missing its content or references another section for context, note that in your response.
                         Provide your answer in a clear and concise manner.

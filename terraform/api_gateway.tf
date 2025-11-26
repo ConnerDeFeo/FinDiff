@@ -4,6 +4,7 @@ locals {
     # GET Lambdas
     "search_tickers" = {lambda = aws_lambda_function.lambdas["search_tickers"], method = "GET"}
     "get_available_10k_filings" = {lambda = aws_lambda_function.lambdas["get_available_10k_filings"], method = "GET"}
+    "check_document_processed" = {lambda = aws_lambda_function.lambdas["check_document_processed"], method = "GET"}
 
     # POST Lambdas
 

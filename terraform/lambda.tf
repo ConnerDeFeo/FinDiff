@@ -45,6 +45,16 @@ locals {
       source_dir  = "../server/lambdas/websocket/onDisconnect"
       output_path = "../server/lambdas/websocket/zips/onDisconnect.zip"
       layers      = ["dynamo"]
+    },
+    "check_document_processed" = {
+      source_dir  = "../server/lambdas/check_document_processed"
+      output_path = "../server/lambdas/zips/check_document_processed.zip"
+      layers      = ["dynamo"]
+    },
+    "upload_document" = {
+      source_dir  = "../server/lambdas/upload_document"
+      output_path = "../server/lambdas/zips/upload_document.zip"
+      layers      = ["filings","dynamo"]
     }
   }
   layers = {

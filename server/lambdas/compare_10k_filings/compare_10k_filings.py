@@ -1,6 +1,6 @@
 import boto3
 import asyncio
-from filings import *
+from filings import get_10k_section_async
 import json
 
 # Configuration constants
@@ -127,7 +127,7 @@ async def compare_10k_filings_async(event, context):
         print(f"Error fetching filings: {str(e)}")
         apigateway.post_to_connection(
             ConnectionId=connection_id,
-            Data=json.dumps({'type': 'error', 'message': f"Internal Server Error: {str(e)}"})
+            Data=json.dumps({'type': 'error', 'data': str(e)})
         )
 
 def compare_10k_filings(event, context):

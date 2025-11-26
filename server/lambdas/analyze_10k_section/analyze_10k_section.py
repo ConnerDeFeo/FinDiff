@@ -94,7 +94,7 @@ async def analyze_10k_section_async(event, context):
         apigateway.post_to_connection(
             Data=json.dumps({
                 "type": "error",
-                "message": f"An error occurred: {str(e)}"
+                "data": str(e)
             }),
             ConnectionId=connection_id
         )

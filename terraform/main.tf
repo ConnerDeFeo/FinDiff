@@ -20,6 +20,23 @@ resource "aws_dynamodb_table" "websocket_connections" {
   }
 }
 
+# DynamoDB for storing if a docuemnt has been processed
+resource "aws_dynamodb_table" "processed_documents" {
+  name         = "processed_documents"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "document_id"
+
+  attribute {
+    name = "document_id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "FinDiff Processed Documents"
+    Environment = "prod"
+  }
+}
+
 # Create s3 bucket to store company filings
 resource "aws_s3_bucket" "company_filings" {
   bucket = "findiff-bucket-prod"

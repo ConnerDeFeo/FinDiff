@@ -5,7 +5,8 @@ locals{
     "generate_response" = "generate_response",
     "analyze_10k_section" = "analyze_10k_section",
     "compare_10k_filings" = "compare_10k_filings",
-    "generate_multi_context_response" = "generate_multi_context_response"
+    "generate_multi_context_response" = "generate_multi_context_response",
+    "upload_document" = "upload_document"
   }
 }
 

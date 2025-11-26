@@ -58,7 +58,7 @@ function App() {
         } else if (message.type === 'complete') {
           websocket.close();
         } else if (message.type === 'error') {
-          console.error('Error:', message.message);
+          setAnalysis(prev => prev + message.data);
           websocket.close();
           setAwaitingAnalysis(false);
         }

@@ -1,5 +1,5 @@
 import json
-from filings import get_10k_section_async, get_relevant_sections
+from filings import get_multiple_10k_sections_async, get_relevant_sections
 import boto3
 import asyncio
 
@@ -25,11 +25,7 @@ async def generate_response_async(event, context):
 
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
-        summaires = [
-            get_10k_section_async(cik, accession.replace("-", ""), primaryDoc, section) 
-            for section in sections
-        ]
-        section_texts = await asyncio.gather(*summaires)
+        summaires = await get_multiple_10k_sections_async(cik, accession.replace("-", ""), primaryDoc, sections)
 
         response = bedrock.converse_stream(
             modelId = "openai.gpt-oss-20b-1:0",
@@ -45,7 +41,7 @@ async def generate_response_async(event, context):
                         {prompt}
 
                         Extracted Sections:
-                        {"\n".join([f"Section: {sections[i]}\nContent: {section_texts[i]}" for i in range(len(sections))])}
+                        {json.dumps(summaires, indent=2)}
 
                         If any section is missing its content or references another section for context, note that in your response.
                         Provide your answer in markdown format.

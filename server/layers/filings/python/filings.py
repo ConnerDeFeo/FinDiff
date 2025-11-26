@@ -79,7 +79,7 @@ async def fetch_10k_from_sec(url):
         if response.status_code == 200:
             return response.text
         else:
-            return None
+            raise ValueError("Could not fetch 10-K filing from SEC.")
 
 def parse_text_from_html(html_content):
     """
@@ -101,7 +101,7 @@ def parse_text_from_html(html_content):
     text = soup.get_text(separator='\n', strip=True)
     return text
 
-def get_requested_section(html_content, requested_section):
+def get_requested_section(full_text, requested_section):
     """
     Extract a specific section from a 10-K filing HTML.
     
@@ -112,8 +112,6 @@ def get_requested_section(html_content, requested_section):
     Returns:
         Tuple of (section_text, token_count)
     """
-    full_text = parse_text_from_html(html_content)
-
     start_index = section_index.get(requested_section)
     if start_index is None:
         return "", 0  # Section not found
@@ -246,7 +244,6 @@ def get_relevant_sections(prompt: str) -> dict:
         inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0}
     )
     response = extract_text_from_bedrock_response(response)
-    print(f"get_relevant_sections response: {response}")
     clean = response.strip()
     clean = clean.replace("```json", "").replace("```", "").strip()
     try:
@@ -254,6 +251,18 @@ def get_relevant_sections(prompt: str) -> dict:
     except json.JSONDecodeError:
         res = {"sections": []}
     return res
+
+async def get_requested_section_summarization(full_text: str, section: str, raw_text_key: str, summary_key: str) -> str:
+    text, tokens = get_requested_section(full_text, section)
+    if tokens == 0:
+        raise ValueError("Could not extract the requested section from the filing.")
+    # Extract the requested section
+    put_object(raw_text_key, text.encode('utf-8'))
+    
+    # Summarize the section
+    summarization = await summarize_section(text, tokens, section, summary_key)
+
+    return summarization
 
 async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, section: str) -> str:
     """
@@ -272,6 +281,7 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
     # Define S3 cache keys
     raw_text_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}.txt"
     summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
+    print(f"Location: 10k_filings_analysis/{cik}/{accession}/{primaryDoc}")
     
     # Return cached summary if it exists
     if exists(summary_key):
@@ -280,14 +290,52 @@ async def get_10k_section_async(cik: str, accession: str, primaryDoc: str, secti
     # Fetch the filing from SEC
     url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primaryDoc}"
     doc = await fetch_10k_from_sec(url)
-    if not doc:
-        raise ValueError("Could not fetch 10-K filing from SEC.")
-    
-    # Extract the requested section
-    text, tokens = get_requested_section(doc, section)
-    put_object(raw_text_key, text.encode('utf-8'))
-    
-    # Summarize the section
-    summarization = await summarize_section(text, tokens, section, summary_key)
+    full_text = parse_text_from_html(doc)
 
-    return summarization
+    return await get_requested_section_summarization(full_text, section, raw_text_key, summary_key)
+
+async def get_multiple_10k_sections_async(cik: str, accession: str, primaryDoc: str, sections: list) -> dict:
+    """
+    Fetch, parse, and summarize multiple sections from a 10-K filing.
+    
+    Args:
+        cik: Company CIK number
+        accession: Filing accession number (without hyphens)
+        primaryDoc: Primary document filename
+        sections: List of section names to extract
+        
+    Returns:
+        A dictionary mapping section names to their summarized text
+    """
+    results = {}
+    uncached_sections = []
+    
+    # Check cache for each section
+    for section in sections:
+        summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
+        if exists(summary_key):
+            results[section] = get_object(summary_key).decode('utf-8')
+        else:
+            uncached_sections.append(section)
+    # If everything was cached, return early
+    if not uncached_sections:
+        return results
+    
+    # Fetch the document once for all uncached sections
+    url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primaryDoc}"
+    doc = await fetch_10k_from_sec(url)
+    full_text = parse_text_from_html(doc)
+
+    # Process uncached sections in parallel
+    tasks = {}
+    for section in uncached_sections:
+        raw_text_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}.txt"
+        summary_key = f"10k_filings_analysis/{cik}/{accession}/{primaryDoc}/{section}_summary.txt"
+        tasks[section] = get_requested_section_summarization(full_text, section, raw_text_key, summary_key)
+
+    # Run all uncached sections in parallel
+    completed = await asyncio.gather(*tasks.values())
+    for section, result in zip(tasks.keys(), completed):
+        results[section] = result
+    
+    return results
