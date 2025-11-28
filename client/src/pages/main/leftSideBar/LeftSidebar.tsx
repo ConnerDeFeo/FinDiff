@@ -3,15 +3,16 @@ import FinDiffButton from "../../../common/component/FinDiffButton";
 import SearchStock from "../../../common/component/SearchStock";
 import secService from "../../../service/SecService";
 import type { Stock } from "../../../common/types/Stock";
-import { WebSocketMessageType } from "../../../common/variables/Enums";
+import { MessageRole, WebSocketMessageType } from "../../../common/variables/Enums";
 import StockDisplay from "../../../common/component/display/StockDisplay";
 import SelectedDocuments from "./SelectedDocuments";
 import SectionSelection from "./SectionSelection";
+import type { Message } from "../../../common/types/Message";
 
 
 const LeftSidebar = (
     {
-        setAnalysis, 
+        setChat, 
         setAnalysisMode, 
         awaitingAnalysis, 
         selectedDocuments, 
@@ -23,7 +24,7 @@ const LeftSidebar = (
     }
     :
     {
-        setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
+        setChat: React.Dispatch<React.SetStateAction<Message[]>>, 
         setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
         awaitingAnalysis: boolean,
         selectedDocuments: {
@@ -50,7 +51,6 @@ const LeftSidebar = (
     
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
-        setAnalysis('');
         setAwaitingAnalysis(true);
         let data = {};
         if (selectedDocuments.length === 1) {
@@ -91,6 +91,8 @@ const LeftSidebar = (
         }
         const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL!);
         websocket.onopen = () => {
+            console.log("WebSocket connection opened");
+            setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "" }]);
             websocket.send(JSON.stringify(data));
         };
 
@@ -98,12 +100,28 @@ const LeftSidebar = (
             const message = JSON.parse(event.data);
             
             if (message.type === WebSocketMessageType.Chunk) {
-                setAnalysis(prev => prev + message.data);
+                setChat(prev=>{
+                    const updated = [...prev];
+                    const lastIndex = updated.length - 1;
+                    updated[lastIndex] = {
+                        ...updated[lastIndex],
+                        content: updated[lastIndex].content + message.data
+                    };
+                    return updated;
+                });
                 setAwaitingAnalysis(false);
             } else if (message.type === WebSocketMessageType.Complete) {
                 websocket.close();
             } else if (message.type === WebSocketMessageType.Error) {
-                setAnalysis(prev => prev + message.data);
+                setChat(prev=>{
+                    const updated = [...prev];
+                    const lastIndex = updated.length - 1;
+                    updated[lastIndex] = {
+                        ...updated[lastIndex],
+                        content: updated[lastIndex].content + message.data
+                    };
+                    return updated;
+                });
                 websocket.close();
                 setAwaitingAnalysis(false);
             }
@@ -114,6 +132,11 @@ const LeftSidebar = (
             websocket.close();
             setAwaitingAnalysis(false);
         };
+
+        websocket.onclose = () => {
+            console.log("WebSocket connection closed");
+            setDisableSendButton(false);
+        }
     }
 
     const fetchAvailable10KFilings = async (cik:string) => {

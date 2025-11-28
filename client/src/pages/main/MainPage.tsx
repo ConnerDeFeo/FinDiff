@@ -1,12 +1,12 @@
 import { useState } from "react";
 import type { Stock } from "../../common/types/Stock";
-import { WebSocketMessageType } from "../../common/variables/Enums";
+import { MessageRole, WebSocketMessageType } from "../../common/variables/Enums";
 import LeftSidebar from "./leftSideBar/LeftSidebar";
-import Spinner from "../../common/component/display/Spinner";
 import MarkDownDisplay from "../../common/component/display/MarkdownDisplay";
+import type { Message } from "../../common/types/Message";
 
 const MainPage = () => {
-    const [analysis, setAnalysis] = useState<string>('');
+    const [chat, setChat] = useState<Message[]>([]);
     const [awaitingAnalysis, setAwaitingAnalysis] = useState<boolean>(false);
     const [analysisMode, setAnalysisMode] = useState<'compare' | 'single' | 'chatbot'>('chatbot');
     const [userInput, setUserInput] = useState<string>('');
@@ -24,7 +24,7 @@ const MainPage = () => {
     const handlePromptSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e) e.preventDefault(); // Prevent newline on enter key press
         setDisableSendButton(true);
-        setAnalysis('');
+        setChat(prev=>[...prev, { role: MessageRole.User, content: userInput }]);
         setUserInput('');
         setAwaitingAnalysis(true);
         
@@ -52,7 +52,9 @@ const MainPage = () => {
             };
             
             websocket.onopen = () => {
-                setDisableSendButton(false);
+                console.log("WebSocket connection opened");
+                setDisableSendButton(true);
+                setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "" }]);
                 websocket.send(JSON.stringify(payload));
             };
             
@@ -60,16 +62,38 @@ const MainPage = () => {
                 const message = JSON.parse(event.data);
                 
                 if (message.type === WebSocketMessageType.Chunk) {
-                    setAnalysis(prev => prev + message.data);
+                    setChat(prev=>{
+                        const updated = [...prev];
+                        const lastIndex = updated.length - 1;
+                        updated[lastIndex] = {
+                            ...updated[lastIndex],
+                            content: updated[lastIndex].content + message.data
+                        };
+                        return updated;
+                    });
                     setAwaitingAnalysis(false);
                 } else if (message.type === WebSocketMessageType.Complete) {
+                    console.log(message.id)
                     setConversationId(message.id);
                     websocket.close();
                 } else if (message.type === WebSocketMessageType.Error) {
-                    setAnalysis(prev => prev + message.data);
+                    setChat(prev=>{
+                        const updated = [...prev];
+                        const lastIndex = updated.length - 1;
+                        updated[lastIndex] = {
+                            ...updated[lastIndex],
+                            content: updated[lastIndex].content + message.data
+                        };
+                        return updated;
+                    });
                     websocket.close();
                     setAwaitingAnalysis(false);
                 }
+            };
+
+            websocket.onclose = () => {
+                console.log("WebSocket connection closed");
+                setDisableSendButton(false);
             };
             
             websocket.onerror = (error) => {
@@ -84,7 +108,7 @@ const MainPage = () => {
         <div className="h-screen findiff-bg-white flex overflow-hidden">
         {/* Left Sidebar */}
         <LeftSidebar
-            setAnalysis={setAnalysis}
+            setChat={setChat}
             setAnalysisMode={setAnalysisMode}
             awaitingAnalysis={awaitingAnalysis}
             selectedDocuments={selectedDocuments}
@@ -99,15 +123,18 @@ const MainPage = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto p-8 mb-24">
-                {(analysis || awaitingAnalysis) && (awaitingAnalysis ? 
-                    <div className="flex flex-col justify-center items-center py-12">
-                    <Spinner />
-                        <p className="mt-4 text-gray-600">This may take a few moments.</p>
+                {chat.length > 0 && chat.map((message, index) => (
+                    <div key={index} className={`mb-6 ${message.role === MessageRole.User ? 'text-right' : 'text-left'}`}>
+                        {message.role === MessageRole.Assistant ? 
+                            <MarkDownDisplay markdown={message.content} /> 
+                            : 
+                            <div className="ml-80 bg-gray-200 p-3 pr-5 rounded-xl text-left">
+                                {message.content}
+                            </div>
+                        }
                     </div>
-                    :
-                    <MarkDownDisplay markdown={analysis} />
-                )}
-                {!analysis && !awaitingAnalysis && (
+                ))}
+                {chat.length === 0 && !awaitingAnalysis && (
                 <div className="flex items-center justify-center h-full">
                     <div className="text-center text-gray-400">
                     <svg className="mx-auto h-24 w-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,10 +171,10 @@ const MainPage = () => {
                     onClick={() => handlePromptSubmit()}
                     disabled={!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton}
                     className={`
-                    px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
-                    hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
-                    transition-all cursor-pointer ${
-                    (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton) ? 'opacity-50 cursor-not-allowed' : ''
+                        px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
+                        hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
+                        transition-all cursor-pointer ${
+                        (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                 >
                     <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>

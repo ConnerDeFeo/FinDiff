@@ -4,6 +4,7 @@ import boto3
 import asyncio
 from dynamo import put_item, query_items
 import uuid
+import time
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
@@ -46,28 +47,34 @@ async def generate_multi_context_response_async(event, context):
                 )
             )
         section_texts = await asyncio.gather(*summaires)
-
-        response = bedrock.converse_stream(
-            modelId = "openai.gpt-oss-20b-1:0",
-            messages=[
-                {
-                    "role": "user", 
-                    "content": [{"text": f"""
-                        You are an expert financial analyst. Using the following extracted sections from multiple 10-K filings,
-                        provide a detailed response to the user's prompt below.
-
-                        User Prompt:
-                        {prompt}
-
+        conversation.extend(
+            {
+                "role": "system", 
+                "content": [
+                    {"text": f"""
+                        You are an expert financial analyst.
+                        Your job is to answer the question directly and completely. 
+                        Sections of multiple 10-K filings have been extracted to help you answer the question. 
+                                
                         Extracted Sections:
                         {json.dumps(section_texts, indent=2)}
 
-                        If any section is missing its content or references another section for context, note that in your response.
-                        Provide your answer in a clear and concise manner.
-                        Provide your answer in markdown format.
-                    """}]
-                },
-            ],
+                        If any section is missing its content or references another section for context, 
+                        note that in your response.
+                        Provide your answer in markdown format. 
+                    """},
+                    {"text": f"""
+                        #USER QUESTION:
+                        {prompt}
+                    """}
+                ]
+            }
+        )
+
+
+        response = bedrock.converse_stream(
+            modelId = "openai.gpt-oss-20b-1:0",
+            messages=conversation,
             inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0},
             additionalModelRequestFields={
                 "reasoning_effort": "low"
@@ -90,16 +97,16 @@ async def generate_multi_context_response_async(event, context):
                 elif 'messageStop' in stream_event:
                     # Stream finished
                     break
-
+        currentTime = int(time.time()*1000)
         # Store updated conversation in DynamoDB
         put_item("conversation_history", {
             "conversation_id": conversation_id,
-            "timestamp": int(asyncio.get_event_loop().time()),
+            "timestamp": currentTime-1,
             "message": {"role": "user", "content": [{"text": prompt}]}
         })
         put_item("conversation_history", {
             "conversation_id": conversation_id,
-            "timestamp": int(asyncio.get_event_loop().time()),
+            "timestamp": currentTime,
             "message": {"role": "assistant", "content": [{"text": response}]}
         })
         # Send completion signal

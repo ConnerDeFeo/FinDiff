@@ -4,3 +4,8 @@ export enum WebSocketMessageType {
     Error = 'error',
     Update = 'update'
 } 
+
+export enum MessageRole {
+    User = 'user',
+    Assistant = 'assistant'
+}

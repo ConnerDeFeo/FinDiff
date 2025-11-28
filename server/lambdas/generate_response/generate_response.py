@@ -3,7 +3,8 @@ from filings import get_multiple_10k_sections_async, get_relevant_sections
 import boto3
 import asyncio
 import uuid
-from dynamo import query_items, put_item, update_item
+import time
+from dynamo import query_items, put_item
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
@@ -25,6 +26,7 @@ async def generate_response_async(event, context):
         primaryDoc = body["primaryDoc"]
         prompt = body["prompt"]
         conversation_id = body.get("conversationId")
+        print(f"Received request for CIK: {cik}, Accession: {accession}, Conversation ID: {conversation_id}")
 
         # create uuid if no conversation_id
         if not conversation_id:
@@ -40,54 +42,33 @@ async def generate_response_async(event, context):
         sections = get_relevant_sections(prompt).get("sections", [])
         summaires = await get_multiple_10k_sections_async(cik, accession.replace("-", ""), primaryDoc, sections)
 
-        conversation.extend([
+        conversation.append(
             {
-                "role": "system", 
-                "content": [{"text": f"""
-                    You are an expert financial analyst.
-                    Your job is to answer the question directly and completely. 
-                    Sections of a 10-K filing have been extracted to help you answer the question. 
-
-                    If any section is missing its content or references another section for context, 
-                    note that in your response.
-                    Provide your answer in markdown format. 
-                """}]
-            },
-            {"text": f"""
-                #USER QUESTION:
-                {prompt}
-
-                Extracted Sections:
-                {json.dumps(summaires, indent=2)}
-            """}]
-        )
-
-        response = bedrock.converse_stream(
-            modelId = "openai.gpt-oss-20b-1:0",
-            messages=[
-                {
-                    "role": "user", 
-                    "content": [{"text": f"""
+                "role": "user", 
+                "content": [
+                    {"text": f"""
                         You are an expert financial analyst.
-                        Below is the USER QUESTION. Your job is to answer the question directly and completely. 
+                        Your job is to answer the question directly and completely. 
                         Sections of a 10-K filing have been extracted to help you answer the question. 
+                                
+                        Extracted Sections:
+                        {json.dumps(summaires, indent=2)}
 
                         If any section is missing its content or references another section for context, 
                         note that in your response.
                         Provide your answer in markdown format. 
-                    """}]
-                },
-                {
-                    "role": "user", 
-                    "content": [{"text": f"""
+                    """},
+                    {"text": f"""
                         #USER QUESTION:
                         {prompt}
+                    """}
+                ]
+            }
+        )
 
-                        Extracted Sections:
-                        {json.dumps(summaires, indent=2)}
-                    """}]
-                },
-            ],
+        response = bedrock.converse_stream(
+            modelId = "openai.gpt-oss-20b-1:0",
+            messages=conversation,
             inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0.75},
             additionalModelRequestFields={
                 "reasoning_effort": "low"
@@ -110,16 +91,16 @@ async def generate_response_async(event, context):
                 elif 'messageStop' in stream_event:
                     # Stream finished
                     break
-
+        currentTime = int(time.time()*1000)  # current time in milliseconds
         # Store updated conversation in DynamoDB
         put_item("conversation_history", {
             "conversation_id": conversation_id,
-            "timestamp": int(asyncio.get_event_loop().time()),
+            "timestamp": currentTime-1,
             "message": {"role": "user", "content": [{"text": prompt}]}
         })
         put_item("conversation_history", {
             "conversation_id": conversation_id,
-            "timestamp": int(asyncio.get_event_loop().time()),
+            "timestamp": currentTime,
             "message": {"role": "assistant", "content": [{"text": response}]}
         })
         # Send completion signal
