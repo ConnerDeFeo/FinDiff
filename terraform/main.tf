@@ -37,6 +37,29 @@ resource "aws_dynamodb_table" "processed_documents" {
   }
 }
 
+# DynamoDB for storing conversation history
+resource "aws_dynamodb_table" "conversation_history" {
+  name         = "conversation_history"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "conversation_id"
+  range_key    = "timestamp"
+
+  attribute {
+    name = "conversation_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "timestamp"
+    type = "N"
+  }
+
+  tags = {
+    Name        = "FinDiff Conversation History"
+    Environment = "prod"
+  }
+}
+
 # Create s3 bucket to store company filings
 resource "aws_s3_bucket" "company_filings" {
   bucket = "findiff-bucket-prod"

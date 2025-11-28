@@ -23,3 +23,12 @@ def update_item(table_name: str, key: dict, update_expression: str, expression_a
 def delete_item(table_name: str, key: dict):
     table = dynamodb.Table(table_name) # type: ignore
     table.delete_item(Key=key)
+
+def query_items(table_name: str, key_condition_expression, expression_attribute_values: dict, ScanIndexForward: bool = True):
+    table = dynamodb.Table(table_name) # type: ignore
+    response = table.query(
+        KeyConditionExpression=key_condition_expression,
+        ExpressionAttributeValues=expression_attribute_values,
+        ScanIndexForward=ScanIndexForward
+    )
+    return response.get('Items', [])

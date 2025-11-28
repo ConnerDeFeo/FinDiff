@@ -29,12 +29,12 @@ locals {
     "generate_response" = {
       source_dir  = "../server/lambdas/generate_response"
       output_path = "../server/lambdas/zips/generate_response.zip"
-      layers      = ["filings"]
+      layers      = ["filings", "dynamo"]
     },
     "generate_multi_context_response" = {
       source_dir  = "../server/lambdas/generate_multi_context_response"
       output_path = "../server/lambdas/zips/generate_multi_context_response.zip"
-      layers      = ["filings"]
+      layers      = ["filings", "dynamo"]
     },
     "onConnect" = {
       source_dir  = "../server/lambdas/websocket/onConnect"
@@ -150,7 +150,11 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = [aws_dynamodb_table.websocket_connections.arn, aws_dynamodb_table.processed_documents.arn]
+        Resource = [
+          aws_dynamodb_table.websocket_connections.arn, 
+          aws_dynamodb_table.processed_documents.arn,
+          aws_dynamodb_table.conversation_history.arn
+        ]
       }
     ]
   })

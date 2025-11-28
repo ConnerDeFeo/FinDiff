@@ -2,6 +2,8 @@ import json
 from filings import get_multiple_10k_sections_async, get_relevant_sections
 import boto3
 import asyncio
+from dynamo import put_item, query_items
+import uuid
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
@@ -20,6 +22,16 @@ async def generate_multi_context_response_async(event, context):
         # Extract parameters from event
         stocks = body["stocks"] # {cik, accession, primaryDoc}[]
         prompt = body["prompt"]
+        conversation_id = body.get("conversationId")
+
+        # create uuid if no conversation_id
+        if not conversation_id:
+            conversation_id = str(uuid.uuid4())
+            conversation = []
+        # Else fetch existing conversation from DynamoDB
+        else:
+            conversation = query_items("conversation_history", "conversation_id = :cid", {":cid": conversation_id})
+            conversation = [item["message"] for item in conversation]
 
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])
@@ -62,12 +74,14 @@ async def generate_multi_context_response_async(event, context):
             }
         )
         stream = response.get('stream')
+        response = ""
         if stream:
             for stream_event in stream:
                 if 'contentBlockDelta' in stream_event:
                     delta = stream_event['contentBlockDelta']['delta']
                     if 'text' in delta:
                         text_chunk = delta['text']
+                        response += text_chunk
                         apigateway.post_to_connection(
                             ConnectionId=connection_id,
                             Data=json.dumps({'type': 'chunk', 'data': text_chunk})
@@ -76,10 +90,22 @@ async def generate_multi_context_response_async(event, context):
                 elif 'messageStop' in stream_event:
                     # Stream finished
                     break
+
+        # Store updated conversation in DynamoDB
+        put_item("conversation_history", {
+            "conversation_id": conversation_id,
+            "timestamp": int(asyncio.get_event_loop().time()),
+            "message": {"role": "user", "content": [{"text": prompt}]}
+        })
+        put_item("conversation_history", {
+            "conversation_id": conversation_id,
+            "timestamp": int(asyncio.get_event_loop().time()),
+            "message": {"role": "assistant", "content": [{"text": response}]}
+        })
         # Send completion signal
         apigateway.post_to_connection(
             ConnectionId=connection_id,
-            Data=json.dumps({'type': 'complete'})
+            Data=json.dumps({'type': 'complete', 'id': conversation_id})
         )
     except Exception as e:
         print(f"Error in generate_response: {e}")

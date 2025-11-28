@@ -18,8 +18,9 @@ const MainPage = () => {
     }[]>([]);
     const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
     const [disableSendButton, setDisableSendButton] = useState<boolean>(false);
+    const [conversationId, setConversationId] = useState<string>('');
 
-    // Handle prompt submissionq
+    // Handle prompt submission
     const handlePromptSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e) e.preventDefault(); // Prevent newline on enter key press
         setDisableSendButton(true);
@@ -37,15 +38,17 @@ const MainPage = () => {
                 cik: selectedStock?.cik_str,
                 accession: selectedDocuments[0].accessionNumber,
                 primaryDoc: selectedDocuments[0].primaryDocument,
-                prompt: userInput
+                prompt: userInput,
+                conversationId: conversationId || undefined
             } : {
                 action: "generate_multi_context_response",
                 stocks: selectedDocuments.map(doc => ({
-                cik: selectedStock?.cik_str,
-                accession: doc.accessionNumber,
-                primaryDoc: doc.primaryDocument
+                    cik: selectedStock?.cik_str,
+                    accession: doc.accessionNumber,
+                    primaryDoc: doc.primaryDocument
                 })),
-                prompt: userInput
+                prompt: userInput,
+                conversationId: conversationId || undefined
             };
             
             websocket.onopen = () => {
@@ -57,14 +60,15 @@ const MainPage = () => {
                 const message = JSON.parse(event.data);
                 
                 if (message.type === WebSocketMessageType.Chunk) {
-                setAnalysis(prev => prev + message.data);
-                setAwaitingAnalysis(false);
+                    setAnalysis(prev => prev + message.data);
+                    setAwaitingAnalysis(false);
                 } else if (message.type === WebSocketMessageType.Complete) {
-                websocket.close();
+                    setConversationId(message.id);
+                    websocket.close();
                 } else if (message.type === WebSocketMessageType.Error) {
-                setAnalysis(prev => prev + message.data);
-                websocket.close();
-                setAwaitingAnalysis(false);
+                    setAnalysis(prev => prev + message.data);
+                    websocket.close();
+                    setAwaitingAnalysis(false);
                 }
             };
             
