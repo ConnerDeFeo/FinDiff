@@ -9,7 +9,19 @@ import SelectedDocuments from "./SelectedDocuments";
 import SectionSelection from "./SectionSelection";
 
 
-const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedDocuments, selectedStock, setSelectedDocuments, setSelectedStock, setAwaitingAnalysis}:
+const LeftSidebar = (
+    {
+        setAnalysis, 
+        setAnalysisMode, 
+        awaitingAnalysis, 
+        selectedDocuments, 
+        selectedStock, 
+        setSelectedDocuments, 
+        setSelectedStock, 
+        setAwaitingAnalysis,
+        setDisableSendButton
+    }
+    :
     {
         setAnalysis: React.Dispatch<React.SetStateAction<string>>, 
         setAnalysisMode: React.Dispatch<React.SetStateAction<'compare' | 'single' | 'chatbot'>>, 
@@ -28,7 +40,8 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
             year: string;
         }[]>>,
         setSelectedStock: React.Dispatch<React.SetStateAction<Stock | undefined>>,
-        setAwaitingAnalysis: React.Dispatch<React.SetStateAction<boolean>>
+        setAwaitingAnalysis: React.Dispatch<React.SetStateAction<boolean>>,
+        setDisableSendButton: React.Dispatch<React.SetStateAction<boolean>>,
     }
 ) => {
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
@@ -146,6 +159,7 @@ const LeftSidebar = ({ setAnalysis, setAnalysisMode, awaitingAnalysis, selectedD
                         currentFilingSelection={currentFilingSelection}
                         setCurrentFilingSelection={setCurrentFilingSelection}
                         setSelectedDocuments={setSelectedDocuments}
+                        setDisableSendButton={setDisableSendButton}
                     />
 
                     {/* Sections Selection */}

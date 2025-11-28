@@ -17,9 +17,12 @@ const MainPage = () => {
         year: string;
     }[]>([]);
     const [selectedStock, setSelectedStock] = useState<Stock | undefined>();
+    const [disableSendButton, setDisableSendButton] = useState<boolean>(false);
 
     // Handle prompt submissionq
-    const handlePromptSubmit = async () => {
+    const handlePromptSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e) e.preventDefault(); // Prevent newline on enter key press
+        setDisableSendButton(true);
         setAnalysis('');
         setUserInput('');
         setAwaitingAnalysis(true);
@@ -27,48 +30,49 @@ const MainPage = () => {
         if (selectedDocuments.length >= 1) {
         setAnalysisMode('chatbot');
         
-        // Create WebSocket on-demand
-        const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
-        const payload = selectedDocuments.length === 1 ? {
-            action: 'generate_response',
-            cik: selectedStock?.cik_str,
-            accession: selectedDocuments[0].accessionNumber,
-            primaryDoc: selectedDocuments[0].primaryDocument,
-            prompt: userInput
-        } : {
-            action: "generate_multi_context_response",
-            stocks: selectedDocuments.map(doc => ({
-            cik: selectedStock?.cik_str,
-            accession: doc.accessionNumber,
-            primaryDoc: doc.primaryDocument
-            })),
-            prompt: userInput
-        };
-        
-        websocket.onopen = () => {
-            websocket.send(JSON.stringify(payload));
-        };
-        
-        websocket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
+            // Create WebSocket on-demand
+            const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+            const payload = selectedDocuments.length === 1 ? {
+                action: 'generate_response',
+                cik: selectedStock?.cik_str,
+                accession: selectedDocuments[0].accessionNumber,
+                primaryDoc: selectedDocuments[0].primaryDocument,
+                prompt: userInput
+            } : {
+                action: "generate_multi_context_response",
+                stocks: selectedDocuments.map(doc => ({
+                cik: selectedStock?.cik_str,
+                accession: doc.accessionNumber,
+                primaryDoc: doc.primaryDocument
+                })),
+                prompt: userInput
+            };
             
-            if (message.type === WebSocketMessageType.Chunk) {
-            setAnalysis(prev => prev + message.data);
-            setAwaitingAnalysis(false);
-            } else if (message.type === WebSocketMessageType.Complete) {
-            websocket.close();
-            } else if (message.type === WebSocketMessageType.Error) {
-            setAnalysis(prev => prev + message.data);
-            websocket.close();
-            setAwaitingAnalysis(false);
-            }
-        };
-        
-        websocket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            websocket.close();
-            setAwaitingAnalysis(false);
-        };
+            websocket.onopen = () => {
+                setDisableSendButton(false);
+                websocket.send(JSON.stringify(payload));
+            };
+            
+            websocket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                
+                if (message.type === WebSocketMessageType.Chunk) {
+                setAnalysis(prev => prev + message.data);
+                setAwaitingAnalysis(false);
+                } else if (message.type === WebSocketMessageType.Complete) {
+                websocket.close();
+                } else if (message.type === WebSocketMessageType.Error) {
+                setAnalysis(prev => prev + message.data);
+                websocket.close();
+                setAwaitingAnalysis(false);
+                }
+            };
+            
+            websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                websocket.close();
+                setAwaitingAnalysis(false);
+            };
         }
     };
 
@@ -84,6 +88,7 @@ const MainPage = () => {
             selectedStock={selectedStock}
             setSelectedStock={setSelectedStock}
             setAwaitingAnalysis={setAwaitingAnalysis}
+            setDisableSendButton={setDisableSendButton}
         />
 
         {/* Main Content Area */}
@@ -93,7 +98,7 @@ const MainPage = () => {
                 {(analysis || awaitingAnalysis) && (awaitingAnalysis ? 
                     <div className="flex flex-col justify-center items-center py-12">
                     <Spinner />
-                    <p className="mt-4 text-gray-600">This may take a few moments.</p>
+                        <p className="mt-4 text-gray-600">This may take a few moments.</p>
                     </div>
                     :
                     <MarkDownDisplay markdown={analysis} />
@@ -120,25 +125,25 @@ const MainPage = () => {
             <div className="w-4xl mx-auto fixed bottom-2 left-70 right-0 bg-white">
             <div className="relative">
                 <textarea
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Type your message here..."
-                className="
-                    block w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 
-                    focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none transition-all
-                "
-                rows={3}
-                onKeyDown={e => e.key === "Enter" ? handlePromptSubmit() : undefined}
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder="Type your message here..."
+                    className="
+                        block w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 
+                        focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none transition-all
+                    "
+                    rows={3}
+                    onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton) ? handlePromptSubmit(e) : undefined}
                 />
                 <div className="absolute bottom-3 right-3">
                 <button
-                    onClick={handlePromptSubmit}
-                    disabled={!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis}
+                    onClick={() => handlePromptSubmit()}
+                    disabled={!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton}
                     className={`
                     px-2 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium 
                     hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 
                     transition-all cursor-pointer ${
-                    (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis) ? 'opacity-50 cursor-not-allowed' : ''
+                    (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                 >
                     <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>
