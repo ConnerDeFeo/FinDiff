@@ -74,7 +74,7 @@ const LeftSidebar = (
             const [doc1, doc2] = selectedDocuments.sort((a, b) => a.filingDate.localeCompare(b.filingDate));
             const stockData1 = {
                 cik: selectedStock.cik_str, 
-                accessionNumber: doc1.accessionNumber, 
+                accessionNumber: doc1.accessionNumber,  
                 primaryDocument: doc1.primaryDocument
             };
             const stockData2 = {
@@ -92,7 +92,7 @@ const LeftSidebar = (
         const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL!);
         websocket.onopen = () => {
             console.log("WebSocket connection opened");
-            setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "" }]);
+            setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "", section: selectedSection.replaceAll('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}]);
             websocket.send(JSON.stringify(data));
         };
 
@@ -148,6 +148,7 @@ const LeftSidebar = (
     }
 
     const onStockSelect = (stock: Stock) => {
+        setSelectedDocuments([]);
         fetchAvailable10KFilings(stock.cik_str);
         setSelectedStock(stock);
     }

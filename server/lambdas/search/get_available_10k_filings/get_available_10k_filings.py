@@ -38,7 +38,7 @@ def get_available_10k_filings(event, context):
         recent = filings.get('recent', {})
         def append_10k_filings(data):
             for i, form in enumerate(data.get('form', [])):
-                if form == '10-K':
+                if form == '10-K' and data['primaryDocument'][i] != "":
                     filing_info = {
                         'accessionNumber': data['accessionNumber'][i],
                         'filingDate': data['filingDate'][i],
@@ -46,7 +46,6 @@ def get_available_10k_filings(event, context):
                     }
                     ten_k_filings.append(filing_info)
         append_10k_filings(recent)
-
         
         if "files" in filings:
             for next_file in filings["files"]:

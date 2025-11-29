@@ -26,7 +26,6 @@ async def generate_response_async(event, context):
         primaryDoc = body["primaryDoc"]
         prompt = body["prompt"]
         conversation_id = body.get("conversationId")
-        print(f"Received request for CIK: {cik}, Accession: {accession}, Conversation ID: {conversation_id}")
 
         # create uuid if no conversation_id
         if not conversation_id:
@@ -36,7 +35,6 @@ async def generate_response_async(event, context):
         else:
             conversation = query_items("conversation_history", "conversation_id = :cid", {":cid": conversation_id})
             conversation = [item["message"] for item in conversation]
-            print(f"Fetched existing conversation with {len(conversation)} messages.")
 
         # Parse user prompt to identify requested sections
         sections = get_relevant_sections(prompt).get("sections", [])

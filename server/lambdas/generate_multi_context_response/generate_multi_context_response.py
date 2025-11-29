@@ -47,9 +47,9 @@ async def generate_multi_context_response_async(event, context):
                 )
             )
         section_texts = await asyncio.gather(*summaires)
-        conversation.extend(
+        conversation.append(
             {
-                "role": "system", 
+                "role": "user", 
                 "content": [
                     {"text": f"""
                         You are an expert financial analyst.
@@ -75,7 +75,7 @@ async def generate_multi_context_response_async(event, context):
         response = bedrock.converse_stream(
             modelId = "openai.gpt-oss-20b-1:0",
             messages=conversation,
-            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0},
+            inferenceConfig={"maxTokens": OUTPUT_TOKENS, "temperature": 0.75},
             additionalModelRequestFields={
                 "reasoning_effort": "low"
             }

@@ -54,7 +54,7 @@ const MainPage = () => {
             websocket.onopen = () => {
                 console.log("WebSocket connection opened");
                 setDisableSendButton(true);
-                setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "" }]);
+                setChat(prev=>[...prev, { role: MessageRole.Assistant, content: ""}]);
                 websocket.send(JSON.stringify(payload));
             };
             
@@ -126,7 +126,12 @@ const MainPage = () => {
                 {chat.length > 0 && chat.map((message, index) => (
                     <div key={index} className={`mb-6 ${message.role === MessageRole.User ? 'text-right' : 'text-left'}`}>
                         {message.role === MessageRole.Assistant ? 
-                            <MarkDownDisplay markdown={message.content} /> 
+                            <div className={message.section ? "border-2 border-gray-300 rounded-lg p-4 bg-white" : ""}>
+                                {message.section &&
+                                    <div className="text-center font-bold py-2 text-3xl border-b-2">{message.section}</div>
+                                }
+                                <MarkDownDisplay markdown={message.content} />
+                            </div>
                             : 
                             <div className="ml-80 bg-gray-200 p-3 pr-5 rounded-xl text-left">
                                 {message.content}

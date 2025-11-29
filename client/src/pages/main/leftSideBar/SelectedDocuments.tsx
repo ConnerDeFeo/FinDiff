@@ -33,6 +33,7 @@ const SelectedDocuments = (
     const uploadDocument = async (filing: {accessionNumber:string, filingDate:string, primaryDocument:string}) => {
         const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL as string);
         websocket.onopen = () => {
+            console.log(`Uploading document for filing date: ${filing.filingDate}`);
             setDisableSendButton(true);
             setUploadProgress(prev => ({
                 ...prev,
@@ -84,6 +85,7 @@ const SelectedDocuments = (
         }
 
         websocket.onclose = () => {
+            console.log(`Upload WebSocket connection closed for filing date: ${filing.filingDate}`);
             setDisableSendButton(false);
         }
     }

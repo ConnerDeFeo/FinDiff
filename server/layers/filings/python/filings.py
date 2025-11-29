@@ -102,7 +102,15 @@ def parse_text_from_html(html_content):
     
     # Get all text with newline separators
     text = soup.get_text(separator='\n', strip=True)
-    return text
+    tail = text[-15000:].lower()
+    
+    markers = ["quick links", "table of contents", "index", "quicklinks"]
+    
+    if any(m in tail for m in markers):
+        # only cut if we detect TOC structure
+        return text[:-5000]  # your preferred cutoff
+    else:
+        return text  # keep whole filing
 
 def get_requested_section(full_text, requested_section):
     """
