@@ -210,7 +210,7 @@ const MainPage = () => {
                                         ${index == chat.length -1 && `min-h-[80vh]`}
                                     `}>
                                         {message.section &&
-                                            <div className="text-center font-bold py-2 text-3xl border-b-2">{message.section}</div>
+                                            <div className="text-center font-bold py-2 mb-2 text-3xl border-b-2">{message.section}</div>
                                         }
                                         {
                                             message.content ?
