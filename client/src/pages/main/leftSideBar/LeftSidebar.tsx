@@ -161,49 +161,51 @@ const LeftSidebar = (
 
             {/* Selected Stock Card */}
             {selectedStock && (
-                <div className="gap-y-4 flex flex-col">
-                    {/* Stock Overview */}
-                    <StockDisplay selectedStock={selectedStock} />
+                <>
+                    <div className="gap-y-4 flex flex-col">
+                        {/* Stock Overview */}
+                        <StockDisplay selectedStock={selectedStock} />
 
-                    {/* Selected Documents */}
-                    <SelectedDocuments
-                        selectedDocuments={selectedDocuments}
-                        selectedCik={selectedStock.cik_str}
-                        awaitingAnalysis={awaitingAnalysis}
-                        available10KFilings={available10KFilings}
-                        currentFilingSelection={currentFilingSelection}
-                        setCurrentFilingSelection={setCurrentFilingSelection}
-                        setSelectedDocuments={setSelectedDocuments}
-                        setDisableSendButton={setDisableSendButton}
-                    />
+                        {/* Selected Documents */}
+                        <SelectedDocuments
+                            selectedDocuments={selectedDocuments}
+                            selectedCik={selectedStock.cik_str}
+                            awaitingAnalysis={awaitingAnalysis}
+                            available10KFilings={available10KFilings}
+                            currentFilingSelection={currentFilingSelection}
+                            setCurrentFilingSelection={setCurrentFilingSelection}
+                            setSelectedDocuments={setSelectedDocuments}
+                            setDisableSendButton={setDisableSendButton}
+                        />
 
-                    {/* Sections Selection */}
-                    <SectionSelection
-                        selectedSection={selectedSection}
-                        setSelectedSection={setSelectedSection}
-                    />
+                        {/* Sections Selection */}
+                        <SectionSelection
+                            selectedSection={selectedSection}
+                            setSelectedSection={setSelectedSection}
+                        />
 
-                    {/* Action Button */}
-                    <FinDiffButton 
-                        onClick={handleSubmit} 
-                        disabled={
-                            awaitingAnalysis || 
-                            !selectedSection || 
-                            selectedDocuments.length === 0 ||
-                            buffer.current.length > 0
-                        }
-                    >
-                        {selectedDocuments.length === 2 ? 'Compare Filings' : selectedDocuments.length === 1 ? 'Analyze Filing' : 'Select Documents'}
-                    </FinDiffButton>
-                </div>
+                        {/* Action Button */}
+                        <FinDiffButton 
+                            onClick={handleSubmit} 
+                            disabled={
+                                awaitingAnalysis || 
+                                !selectedSection || 
+                                selectedDocuments.length === 0 ||
+                                buffer.current.length > 0
+                            }
+                        >
+                            {selectedDocuments.length > 0 ? 'View Section' : 'Select Documents'}
+                        </FinDiffButton>
+                    </div>
+                    <div className="h-[20vh] mt-auto flex flex-col justify-end">
+                        <div>
+                            <FinDiffButton onClick={clearChat}>
+                                New Chat
+                            </FinDiffButton>
+                        </div>
+                    </div>
+                </>
             )}
-            <div className="h-[22vh] mt-auto flex flex-col justify-end p-2">
-                <div>
-                    <FinDiffButton onClick={clearChat}>
-                        New Chat
-                    </FinDiffButton>
-                </div>
-            </div>
         </div>
     );
 }
