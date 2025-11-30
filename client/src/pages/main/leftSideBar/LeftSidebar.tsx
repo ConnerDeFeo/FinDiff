@@ -20,7 +20,10 @@ const LeftSidebar = (
         setSelectedDocuments, 
         setSelectedStock, 
         setAwaitingAnalysis,
-        setDisableSendButton
+        setDisableSendButton,
+        buffer,
+        displayedContentRef,
+        clearChat
     }
     :
     {
@@ -43,6 +46,9 @@ const LeftSidebar = (
         setSelectedStock: React.Dispatch<React.SetStateAction<Stock | undefined>>,
         setAwaitingAnalysis: React.Dispatch<React.SetStateAction<boolean>>,
         setDisableSendButton: React.Dispatch<React.SetStateAction<boolean>>,
+        buffer: React.RefObject<string>,
+        displayedContentRef: React.RefObject<string>,
+        clearChat: ()=>void;
     }
 ) => {
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
@@ -52,6 +58,7 @@ const LeftSidebar = (
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
         setAwaitingAnalysis(true);
+        displayedContentRef.current = '';
         let data = {};
         if (selectedDocuments.length === 1) {
             // Single analysis
@@ -100,28 +107,12 @@ const LeftSidebar = (
             const message = JSON.parse(event.data);
             
             if (message.type === WebSocketMessageType.Chunk) {
-                setChat(prev=>{
-                    const updated = [...prev];
-                    const lastIndex = updated.length - 1;
-                    updated[lastIndex] = {
-                        ...updated[lastIndex],
-                        content: updated[lastIndex].content + message.data
-                    };
-                    return updated;
-                });
-                setAwaitingAnalysis(false);
+                buffer.current += message.data;
             } else if (message.type === WebSocketMessageType.Complete) {
                 websocket.close();
+                setAwaitingAnalysis(false);
             } else if (message.type === WebSocketMessageType.Error) {
-                setChat(prev=>{
-                    const updated = [...prev];
-                    const lastIndex = updated.length - 1;
-                    updated[lastIndex] = {
-                        ...updated[lastIndex],
-                        content: updated[lastIndex].content + message.data
-                    };
-                    return updated;
-                });
+                buffer.current += message.data;
                 websocket.close();
                 setAwaitingAnalysis(false);
             }
@@ -193,20 +184,26 @@ const LeftSidebar = (
                     />
 
                     {/* Action Button */}
-                    <div>
-                        <FinDiffButton 
-                            onClick={handleSubmit} 
-                            disabled={
-                                awaitingAnalysis || 
-                                !selectedSection || 
-                                selectedDocuments.length === 0
-                            }
-                        >
-                            {selectedDocuments.length === 2 ? 'Compare Filings' : selectedDocuments.length === 1 ? 'Analyze Filing' : 'Select Documents'}
-                        </FinDiffButton>
-                    </div>
+                    <FinDiffButton 
+                        onClick={handleSubmit} 
+                        disabled={
+                            awaitingAnalysis || 
+                            !selectedSection || 
+                            selectedDocuments.length === 0 ||
+                            buffer.current.length > 0
+                        }
+                    >
+                        {selectedDocuments.length === 2 ? 'Compare Filings' : selectedDocuments.length === 1 ? 'Analyze Filing' : 'Select Documents'}
+                    </FinDiffButton>
                 </div>
             )}
+            <div className="h-[22vh] mt-auto flex flex-col justify-end p-2">
+                <div>
+                    <FinDiffButton onClick={clearChat}>
+                        New Chat
+                    </FinDiffButton>
+                </div>
+            </div>
         </div>
     );
 }
