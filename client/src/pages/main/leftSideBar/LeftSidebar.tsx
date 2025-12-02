@@ -161,7 +161,7 @@ const LeftSidebar = (
 
             {/* Selected Stock Card */}
             {selectedStock && (
-                <>
+                <div className="flex flex-col">
                     <div className="gap-y-4 flex flex-col">
                         {/* Stock Overview */}
                         <StockDisplay selectedStock={selectedStock} />
@@ -194,17 +194,16 @@ const LeftSidebar = (
                                 buffer.current.length > 0
                             }
                         >
-                            {selectedDocuments.length > 0 ? 'View Section' : 'Select Documents'}
+                            {selectedDocuments.length === 2 ? 'Compare Sections' : selectedDocuments.length === 1 ? 'View Section' : 'Select Documents'}
                         </FinDiffButton>
                     </div>
-                    <div className="h-[20vh] mt-auto flex flex-col justify-end">
-                        <div>
-                            <FinDiffButton onClick={clearChat}>
-                                New Chat
-                            </FinDiffButton>
-                        </div>
+                    <div>
+                        <FinDiffButton onClick={clearChat} className="mt-10 flex items-center">
+                            <p>New Chat</p>
+                            <p className="text-xl ml-2 mb-1">+</p>
+                        </FinDiffButton>
                     </div>
-                </>
+                </div>
             )}
         </div>
     );

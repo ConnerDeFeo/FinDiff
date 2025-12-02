@@ -12,7 +12,7 @@ const SectionSelection = ({ selectedSection, setSelectedSection }:
     }
     return(
         <FindiffDropDown
-            label="Section to View"
+            label="Section to View (Optional)"
             options={Object.values(Sections).map(section => convertSectionKeyToDisplay(section))}
             value={selectedSection ? convertSectionKeyToDisplay(selectedSection) : ''}
             onChange={(value) => {

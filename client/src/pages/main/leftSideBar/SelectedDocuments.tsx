@@ -118,7 +118,7 @@ const SelectedDocuments = (
     return(
         <div className="pb-6 border-b border-gray-200">
             <h3 className="text-sm font-semibold findiff-secondary-blue mb-3">
-                Selected Documents ({selectedDocuments.length}/2)
+                Selected 10-K Documents ({selectedDocuments.length}/2)
             </h3>
             {selectedDocuments.length > 0 ? (
                 <div className="gap-y-2 mb-3">
@@ -132,7 +132,13 @@ const SelectedDocuments = (
                                 className="flex flex-col p-2 bg-blue-50 border border-blue-200 rounded-lg mb-2"
                             >
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-blue-800 font-medium">{doc.year}</span>
+                                    <a href={`https://www.sec.gov/Archives/edgar/data/${selectedCik}/${doc.accessionNumber.replace(/-/g, '')}/${doc.primaryDocument}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="flex items-center"
+                                    >
+                                        <span className="text-sm text-blue-800 font-medium underline">{doc.year}</span>
+                                    </a>
                                     <button
                                         onClick={() => removeDocument(doc.filingDate)}
                                         className="text-red-600 hover:text-red-800 transition-colors"

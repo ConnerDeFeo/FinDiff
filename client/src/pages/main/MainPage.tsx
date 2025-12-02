@@ -2,17 +2,17 @@ import { useRef, useState, useEffect } from "react";
 import type { Stock } from "../../common/types/Stock";
 import { MessageRole, WebSocketMessageType } from "../../common/variables/Enums";
 import LeftSidebar from "./leftSideBar/LeftSidebar";
-import MarkDownDisplay from "../../common/component/display/MarkdownDisplay";
 import type { Message } from "../../common/types/Message";
-import FinDiffBlinker from "../../common/component/display/FinDiffBlinker";
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import MessageDisplay from "./MessageDisplay";
 
 const MainPage = () => {
     // Buffer for incoming streamed content chunks
     const buffer = useRef<string>('');
     // Ref to track the accumulated displayed content
     const displayedContentRef = useRef<string>('');
-    // Ref for scrollable chat container
-    const chatContainerRef = useRef<HTMLDivElement | null>(null);
+    // Virtuoso ref for chat container
+    const chatContainerRef = useRef<VirtuosoHandle | null>(null);
     
     // Chat message history
     const [chat, setChat] = useState<Message[]>([]);
@@ -127,46 +127,51 @@ const MainPage = () => {
      * Creates a typewriter effect for streaming responses
      */
     useEffect(() => {
-        let animationFrameId: number;
-        
-        const animate = () => {
+        let lastUpdate = 0;
+        let updates = false;
+
+        const animate = (timestamp: number) => {
             if (buffer.current.length > 0) {
-                // Take 5 characters from buffer at a time
-                const chunk = buffer.current.slice(0, 5);
-                buffer.current = buffer.current.slice(5);
+                const chunk = buffer.current.slice(0, 15);
+                buffer.current = buffer.current.slice(15);
                 displayedContentRef.current += chunk;
-                
-                // Update the last assistant message with accumulated content
+                updates = true;
+            }
+
+            // Update React state at most 20fps (every 50ms) if there are updates
+            if (timestamp - lastUpdate > 50 && updates) {
                 setChat(prev => {
                     const updated = [...prev];
-                    if (updated.length > 0) {
-                        updated[updated.length - 1] = {
-                            ...updated[updated.length - 1],
-                            content: displayedContentRef.current
-                        };
-                    }
+                    const last = updated[updated.length - 1];
+                    updated[updated.length - 1] = {
+                        ...last,
+                        content: displayedContentRef.current
+                    };
                     return updated;
                 });
+                lastUpdate = timestamp;
+                updates = false;
             }
-            animationFrameId = requestAnimationFrame(animate);
+
+            requestAnimationFrame(animate);
         };
-        
-        animationFrameId = requestAnimationFrame(animate);
-        // Cleanup animation frame on unmount
-        return () => cancelAnimationFrame(animationFrameId);
+
+        const id = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(id);
     }, []);
 
-    /**
-     * Auto-scrolls chat to bottom when new messages arrive
-     */
     useEffect(() => {
-        const el = chatContainerRef.current;
-        if (!el) return;
+        const last = chat[chat.length - 1];
+        if (!last) return;
 
-        requestAnimationFrame(() => {
-            // true bottom = scrollHeight - clientHeight
-            el.scrollTop = el.scrollHeight - el.clientHeight;
-        });
+        // Only scroll if the last message is from the assistant
+        if (last.role === MessageRole.Assistant) {
+            chatContainerRef.current?.scrollToIndex({
+                index: chat.length - 1,
+                align: "end",
+                behavior: "smooth"
+            });
+        }
     }, [chat.length]);
 
     /**
@@ -194,75 +199,61 @@ const MainPage = () => {
                 setDisableSendButton={setDisableSendButton}
                 clearChat={clearChat}
             />
-
             {/* Main Content Area - Chat display and input */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Scrollable chat message area */}
-                <div ref={chatContainerRef} className="flex-1 overflow-y-auto">
-                    <div className="max-w-4xl mx-auto p-8 mb-24">
-                        {/* Render all chat messages */}
-                        {chat.length > 0 && chat.map((message, index) => (
-                            <div key={index} className={`mb-6 ${message.role === MessageRole.User ? '' : 'text-left'}`}>
-                                {message.role === MessageRole.Assistant ? 
-                                    // Assistant message with optional section header
-                                    <div className={` 
-                                        ${message.section ? "border-2 border-gray-300 rounded-lg p-4 bg-white" : ""}
-                                        ${index == chat.length -1 && `min-h-[80vh]`}
-                                    `}>
-                                        {message.section &&
-                                            <div className="text-center font-bold py-2 mb-2 text-3xl border-b-2">{message.section}</div>
-                                        }
-                                        {
-                                            message.content ?
-                                            <MarkDownDisplay markdown={message.content} />
-                                            :
-                                            <FinDiffBlinker />
-                                        }
-                                    </div>
-                                    : 
-                                    // User message 
-                                    <div className="ml-80 bg-gray-200 p-3 pr-5 rounded-xl text-left break-words">
-                                        {message.content}
-                                    </div>
-                                }
-                            </div>
-                        ))}
-                        {/* Empty state placeholder */}
-                        {chat.length === 0 && !awaitingAnalysis && (
-                            <div className="flex items-center justify-center h-full">
-                                <div className="text-center text-gray-400">
-                                    <svg className="mx-auto h-24 w-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p className="text-lg">
-                                        {analysisMode === 'compare' 
-                                            ? 'Select filings to compare and view analysis here'
-                                            : 'Select a filing to analyze and view results here'
-                                        }
-                                    </p>
-                                </div>
+            <div className="flex-1 flex flex-col relative justify-between h-full overflow-hidden">
+                {
+                    chat.length > 0 ?
+                    <Virtuoso
+                        data={chat}
+                        itemContent={(index, item) => (
+                            <div className={`
+                                max-w-4xl mx-auto 
+                                ${index === chat.length - 1 ? 'pb-22' : ''}
+                                ${index === 0 ? 'pt-4' : ''}
+                            `} key={index}>
+                                <MessageDisplay message={item} index={index} chatLength={chat.length} />
                             </div>
                         )}
-                    </div>
-                </div>
-                
+                        followOutput={chat.length > 1 ? 'smooth' : false}
+                        ref={chatContainerRef}
+                        className="overflow-y-auto"
+                    />
+                    : !awaitingAnalysis && 
+                    (
+                        <div className="flex justify-center items-center mt-20">
+                            <div className="text-center text-gray-400">
+                                <svg className="mx-auto h-24 w-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p className="text-lg">
+                                    {analysisMode === 'compare' 
+                                        ? 'Select filings to compare and view analysis here'
+                                        : 'Select a filing to analyze and view results here'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    )
+                }
                 {/* Fixed text input area at bottom */}
-                <div className="w-4xl mx-auto fixed bottom-2 left-62 right-0 bg-white">
-                    <div className="relative">
-                        {/* Multi-line text input with auto-resize */}
-                        <textarea
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            placeholder="Type your message here..."
-                            className="
-                                block w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 
-                                focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none transition-all
-                            "
-                            rows={3}
-                            onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton) ? handlePromptSubmit(e) : undefined}
-                        />
+                <div className="w-4xl mx-auto fixed bottom-2 left-62 right-0 bg-white border-2 border-blue-500 rounded-lg focus:outline-none">
+                    {/* Multi-line text input with auto-resize */}
+                    <textarea
+                        value={userInput}
+                        onChange={(e) => {
+                            setUserInput(e.target.value);
+                            // Auto-resize textarea
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                        }}
+                        placeholder="Type your message here..."
+                        className="block w-full p-3 border-transparent resize-none rounded-lg focus:outline-none overflow-y-auto min-h-12 max-h-50"
+                        rows={1}
+                        onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton) ? handlePromptSubmit(e) : undefined}
+                    />
+                    <div className="relative h-10">
                         {/* Send button positioned in bottom-right of textarea */}
-                        <div className="absolute bottom-3 right-3">
+                        <div className="absolute bottom-1 right-3">
                             <button
                                 onClick={() => handlePromptSubmit()}
                                 disabled={!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton || buffer.current.length > 0}
@@ -273,7 +264,7 @@ const MainPage = () => {
                                     (!userInput.trim() || selectedDocuments.length === 0 || awaitingAnalysis || disableSendButton || buffer.current.length > 0) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             >
-                                <img src="/images/Arrow.png" alt="Send" className="h-7 w-7"/>
+                                <img src="/images/Arrow.png" alt="Send" className="h-6 w-6"/>
                             </button>
                         </div>
                     </div>

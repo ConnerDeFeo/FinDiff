@@ -13,7 +13,7 @@ export const Sections = {
     SELECTED_FINANCIAL_DATA: 'selected_financial_data',
     MANAGEMENTS_DISCUSSION_AND_ANALYSIS: 'managements_discussion_and_analysis',
     QUANTITATIVE_AND_QUALITATIVE_DISCLOSURES: 'quantitative_and_qualitative_disclosures',
-    FINANCIAL_STATEMENTS_AND_SUPPLEMENTARY_DATA: 'financial_statements_and_supplementary_data',
+    NOTES_TO_FINANCIAL_STATEMENTS: 'notes_to_financial_statements',
     CHANGES_IN_AND_DISAGREEMENTS_WITH_ACCOUNTANTS: 'changes_in_and_disagreements_with_accountants',
     CONTROLS_AND_PROCEDURES: 'controls_and_procedures',
     OTHER_INFORMATION: 'other_information',
