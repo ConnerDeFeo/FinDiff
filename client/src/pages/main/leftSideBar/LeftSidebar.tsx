@@ -8,6 +8,7 @@ import StockDisplay from "../../../common/component/display/StockDisplay";
 import SelectedDocuments from "./SelectedDocuments";
 import SectionSelection from "./SectionSelection";
 import type { Message } from "../../../common/types/Message";
+import { useSignInModal } from "../../../common/hooks/useSignInModal";
 
 
 const LeftSidebar = (
@@ -54,6 +55,7 @@ const LeftSidebar = (
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
+    const { setIsSignInModalOpen } = useSignInModal();
     
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
@@ -145,66 +147,70 @@ const LeftSidebar = (
     }
 
     return (
-        <div className="w-65 bg-white border-r border-gray-200 shadow-lg overflow-y-auto flex-shrink-0 p-4">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r findiff-primary-blue bg-clip-text text-transparent">
-                FinDiff
-                </h1>
-                <p className="text-sm text-gray-600">SEC Filing Analysis</p>
-            </div>
-
-            {/* Search Section */}
-            <div className="mb-6">
-                <SearchStock onSelect={onStockSelect}/>
-            </div>
-
-            {/* Selected Stock Card */}
-            {selectedStock && (
-                <div className="flex flex-col">
-                    <div className="gap-y-4 flex flex-col">
-                        {/* Stock Overview */}
-                        <StockDisplay selectedStock={selectedStock} />
-
-                        {/* Selected Documents */}
-                        <SelectedDocuments
-                            selectedDocuments={selectedDocuments}
-                            selectedCik={selectedStock.cik_str}
-                            awaitingAnalysis={awaitingAnalysis}
-                            available10KFilings={available10KFilings}
-                            currentFilingSelection={currentFilingSelection}
-                            setCurrentFilingSelection={setCurrentFilingSelection}
-                            setSelectedDocuments={setSelectedDocuments}
-                            setDisableSendButton={setDisableSendButton}
-                        />
-
-                        {/* Sections Selection */}
-                        <SectionSelection
-                            selectedSection={selectedSection}
-                            setSelectedSection={setSelectedSection}
-                        />
-
-                        {/* Action Button */}
-                        <FinDiffButton 
-                            onClick={handleSubmit} 
-                            disabled={
-                                awaitingAnalysis || 
-                                !selectedSection || 
-                                selectedDocuments.length === 0 ||
-                                buffer.current.length > 0
-                            }
-                        >
-                            {selectedDocuments.length === 2 ? 'Compare Sections' : selectedDocuments.length === 1 ? 'View Section' : 'Select Documents'}
-                        </FinDiffButton>
-                    </div>
-                    <div>
-                        <FinDiffButton onClick={clearChat} className="mt-10 flex items-center">
-                            <p>New Chat</p>
-                            <p className="text-xl ml-2 mb-1">+</p>
-                        </FinDiffButton>
-                    </div>
+        <div className="flex flex-col h-[100vh] bg-white border-r border-gray-200 shadow-lg">
+            <div className="w-65 overflow-y-auto p-4 h-[90%]">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r findiff-primary-blue bg-clip-text text-transparent">
+                    FinDiff
+                    </h1>
+                    <p className="text-sm text-gray-600">SEC Filing Analysis</p>
                 </div>
-            )}
+
+                {/* Search Section */}
+                <div className="mb-6">
+                    <SearchStock onSelect={onStockSelect}/>
+                </div>
+
+                {/* Selected Stock Card */}
+                {selectedStock && (
+                    <div className="flex flex-col">
+                        <div className="gap-y-4 flex flex-col">
+                            {/* Stock Overview */}
+                            <StockDisplay selectedStock={selectedStock} />
+
+                            {/* Selected Documents */}
+                            <SelectedDocuments
+                                selectedDocuments={selectedDocuments}
+                                selectedCik={selectedStock.cik_str}
+                                awaitingAnalysis={awaitingAnalysis}
+                                available10KFilings={available10KFilings}
+                                currentFilingSelection={currentFilingSelection}
+                                setCurrentFilingSelection={setCurrentFilingSelection}
+                                setSelectedDocuments={setSelectedDocuments}
+                                setDisableSendButton={setDisableSendButton}
+                            />
+
+                            {/* Sections Selection */}
+                            <SectionSelection
+                                selectedSection={selectedSection}
+                                setSelectedSection={setSelectedSection}
+                            />
+
+                            {/* Action Button */}
+                            <FinDiffButton 
+                                onClick={handleSubmit} 
+                                disabled={
+                                    awaitingAnalysis || 
+                                    !selectedSection || 
+                                    selectedDocuments.length === 0 ||
+                                    buffer.current.length > 0
+                                }
+                            >
+                                {selectedDocuments.length === 2 ? 'Compare Sections' : selectedDocuments.length === 1 ? 'View Section' : 'Select Documents'}
+                            </FinDiffButton>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <FinDiffButton onClick={clearChat} className="mt-10 flex items-center h-[5%] w-35 ml-4 mb-2">
+                <p>New Chat</p>
+                <p className="text-xl ml-2 mb-1">+</p>
+            </FinDiffButton>
+            <button className="mt-auto h-[5%] w-65 flex items-center gap-x-2 border-t border-gray-200 cursor-pointer" onClick={()=>setIsSignInModalOpen(true)}>
+                <img src="/images/UserAvatar.png" className="h-10 w-10 p-1 ml-4"/>
+                <p>Sign In</p>
+            </button>
         </div>
     );
 }

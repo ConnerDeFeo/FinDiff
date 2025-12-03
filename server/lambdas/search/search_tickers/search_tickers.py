@@ -9,7 +9,6 @@ print(f"Loaded {len(ALL_TICKERS)} tickers.")
 
 def search_tickers(event, context):
     query = event.get('queryStringParameters', {})
-    auth_header = get_auth_header()
 
     try:
         search_term = query.get('q', '').upper()
@@ -17,7 +16,7 @@ def search_tickers(event, context):
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': 'Query parameter "q" is required.'}),
-                'headers': auth_header
+                'headers': get_auth_header
             }
         # Search for tickers that match the search term
         results = []
@@ -34,12 +33,12 @@ def search_tickers(event, context):
         return {
             'statusCode': 200,
             'body': json.dumps(results[:10]),  # return top 10 results
-            'headers': auth_header
+            'headers': get_auth_header
         }
     except Exception as e:
         print("Error in search_tickers:", str(e))
         return {
             'statusCode': 500,
             'body': json.dumps({'message': str(e)}),
-            'headers': auth_header
+            'headers': get_auth_header
         }

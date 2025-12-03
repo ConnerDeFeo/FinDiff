@@ -1,9 +1,12 @@
 import MainPage from "./pages/main/MainPage";
 import './global.css'
+import { SignInModalProvider } from "./common/hooks/useSignInModal";
 
 function App() {
   return(
-    <MainPage />
+    <SignInModalProvider>
+      <MainPage />
+    </SignInModalProvider>
   );
 }
 

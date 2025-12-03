@@ -6,17 +6,18 @@ const FinDiffButton: React.FC<{children: React.ReactNode, onClick: () => void | 
 
   const [loadingState, setLoadingState] = useState<boolean>(false)
 
-    // Wraps the provided onClick to handle Promise-based async calls
-    const handleClick = () => {
-        if (!onClick) return
+  // Wraps the provided onClick to handle Promise-based async calls
+  const handleClick = () => {
+    if (!onClick) return
 
-        const resp = onClick()
-        // If onClick returns a Promise, show spinner until it resolves
-        if (resp instanceof Promise) {
-          setLoadingState(true)
-          resp.finally(() => setLoadingState(false))
-        }
+    const resp = onClick()
+    // If onClick returns a Promise, show spinner until it resolves
+    if (resp instanceof Promise) {
+      setLoadingState(true)
+      resp.finally(() => setLoadingState(false))
     }
+  }
+
   return (
     <button
         onClick={handleClick}
