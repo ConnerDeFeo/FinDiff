@@ -4,13 +4,15 @@ resource "aws_cognito_user_pool" "main" {
     auto_verified_attributes = ["email"]
     username_attributes      = ["email"]
 
-    password_policy {
-      minimum_length    = 8
-      require_uppercase = true
-      require_lowercase = true
-      require_numbers   = true
-      require_symbols   = true
+    lambda_config {
+        define_auth_challenge           = aws_lambda_function.lambdas["define_auth_challenge"].arn
+        create_auth_challenge           = aws_lambda_function.lambdas["create_auth_challenge"].arn
+        verify_auth_challenge_response  = aws_lambda_function.lambdas["verify_auth_challenge"].arn
     }
+
+    depends_on = [
+        aws_lambda_function.lambdas
+    ]
 }
 
 resource "aws_cognito_user_pool_client" "client" {

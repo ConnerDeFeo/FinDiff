@@ -30,3 +30,12 @@ resource "aws_route53_record" "ses_dkim" {
   ttl     = 600
   records = ["${aws_ses_domain_dkim.main.dkim_tokens[count.index]}.dkim.amazonses.com"]
 }
+
+# DMARC record
+resource "aws_route53_record" "dmarc" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "_dmarc"
+  type    = "TXT"
+  ttl     = 600
+  records = ["v=DMARC1; p=none; rua=mailto:dmarc@findiff.com"]
+}
