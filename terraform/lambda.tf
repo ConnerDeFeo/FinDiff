@@ -55,6 +55,21 @@ locals {
       source_dir  = "../server/lambdas/upload_document"
       output_path = "../server/lambdas/zips/upload_document.zip"
       layers      = ["filings","dynamo"]
+    },
+    "define_auth_challenge" = {
+      source_dir  = "../server/lambdas/cognito/define_auth_challenge"
+      output_path = "../server/lambdas/cognito/zips/define_auth_challenge.zip"
+      layers      = []
+    },
+    "create_auth_challenge" = {
+      source_dir  = "../server/lambdas/cognito/create_auth_challenge"
+      output_path = "../server/lambdas/cognito/zips/create_auth_challenge.zip"
+      layers      = []
+    },
+    "verify_auth_challenge" = {
+      source_dir  = "../server/lambdas/cognito/verify_auth_challenge"
+      output_path = "../server/lambdas/cognito/zips/verify_auth_challenge.zip"
+      layers      = []
     }
   }
   layers = {

@@ -141,7 +141,7 @@ const SelectedDocuments = (
                                     </a>
                                     <button
                                         onClick={() => removeDocument(doc.filingDate)}
-                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                        className="text-red-600 hover:text-red-800 transition-colors cursor-pointer"
                                         disabled={awaitingAnalysis || !!progress}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

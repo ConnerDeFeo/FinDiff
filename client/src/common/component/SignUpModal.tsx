@@ -4,8 +4,8 @@ import FinDiffButton from "./FinDiffButton";
 const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
     const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-    const [confirmPassword, setConfirmPassword] = useState<string>('');
+
+    
 
     return (
         <>
@@ -26,7 +26,7 @@ const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                         <h2 className="text-2xl font-bold text-gray-800">Sign Up</h2>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -35,31 +35,18 @@ const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                     </div>
                     
                     {/* Add your sign up form content here */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <div className="flex flex-col gap-y-3">
                         <input 
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full border border-gray-300 rounded-md p-2 mb-1"
+                            placeholder="Enter your email"
                         />
-                        <label className="block text-sm font-medium text-gray-700 mt-4">Password</label>
-                        <input 
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-2 mb-1"
-                        />
-                        <label className="block text-sm font-medium text-gray-700 mt-4">Confirm Password</label>
-                        <input 
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-2 mb-1"
-                        />
-                        <FinDiffButton onClick={()=>{}} className="mt-3 ml-auto flex items-center">
-                            Sign Up
+                        <FinDiffButton onClick={()=>{}} className="text-xl">
+                            Continue with Email
                         </FinDiffButton>
+                        <p className="text-center text-gray-500">Single Sign On (SSO)</p>
                     </div>
                 </div>
             </div>
