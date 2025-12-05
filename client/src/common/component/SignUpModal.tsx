@@ -1,11 +1,47 @@
 import { useState } from "react";
 import FinDiffButton from "./FinDiffButton";
+import { signIn, signUp, confirmSignIn } from 'aws-amplify/auth';
 
 const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
     const [email, setEmail] = useState<string>('');
+    const [verificationCode, setVerificationCode] = useState<string>('');
+    const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
-    
+    const handleSSOClick = async () => {
+        try{
+            await signUp({
+                username: email,
+                password: Math.random().toString(36).substring(2, 15),
+                options:{
+                    userAttributes: {
+                        email: email,
+                    }
+                }
+            });
+        } catch (error:any){};
+        try {
+            await signIn({
+                username: email,
+                options:{
+                    authFlowType: 'CUSTOM_WITHOUT_SRP',
+                }
+            });
+            setIsVerifying(true);
+        }
+        catch (signInError) {
+            console.error('Error during sign in:', signInError);
+        }
+    };
+
+    const handleVerifyCode = async () => {
+        const result = await confirmSignIn({
+            challengeResponse: verificationCode
+        });
+        if(result.isSignedIn){
+            onClose();
+        }
+    };
 
     return (
         <>
@@ -22,32 +58,58 @@ const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Modal content */}
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Sign Up</h2>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer ml-auto mb-4 block"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                     
-                    {/* Add your sign up form content here */}
-                    <div className="flex flex-col gap-y-3">
-                        <input 
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md p-2 mb-1"
-                            placeholder="Enter your email"
-                        />
-                        <FinDiffButton onClick={()=>{}} className="text-xl">
-                            Continue with Email
-                        </FinDiffButton>
-                        <p className="text-center text-gray-500">Single Sign On (SSO)</p>
-                    </div>
+                    {/* Conditional rendering based on verification state */}
+                    {!isVerifying ? (
+                        /* Email input form */
+                        <div className="flex flex-col gap-y-3">
+                            <input 
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md p-2 mb-1"
+                                placeholder="Enter your email"
+                            />
+                            <FinDiffButton onClick={handleSSOClick} className="text-xl">
+                                Continue with Email
+                            </FinDiffButton>
+                            <p className="text-center text-gray-500">Single Sign On (SSO)</p>
+                        </div>
+                    ) : (
+                        /* Verification code form */
+                        <div className="flex flex-col gap-y-3">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">Verify Your Email</h3>
+                            <p className="text-gray-600 mb-4">
+                                We've sent a 6-digit code to <span className="font-medium">{email}</span>
+                            </p>
+                            <input 
+                                type="text"
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                className="w-full border border-gray-300 rounded-md p-2 mb-1 text-center text-2xl tracking-widest"
+                                placeholder="000000"
+                                maxLength={6}
+                                pattern="[0-9]*"
+                            />
+                            <FinDiffButton onClick={handleVerifyCode} className="text-xl">
+                                Verify Code
+                            </FinDiffButton>
+                            <button
+                                onClick={() => setIsVerifying(false)}
+                                className="text-sm text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                            >
+                                ← Back to email
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </>

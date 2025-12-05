@@ -8,7 +8,8 @@ import StockDisplay from "../../../common/component/display/StockDisplay";
 import SelectedDocuments from "./SelectedDocuments";
 import SectionSelection from "./SectionSelection";
 import type { Message } from "../../../common/types/Message";
-import { useSignInModal } from "../../../common/hooks/useSignInModal";
+import { AuthenticationModalType, useAuthenticationModal } from "../../../common/hooks/useAuthenticationModal";
+import { useUser } from "../../../common/hooks/useUser";
 
 
 const LeftSidebar = (
@@ -55,7 +56,8 @@ const LeftSidebar = (
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
-    const { setIsSignInModalOpen } = useSignInModal();
+    const { setAuthenticationModal } = useAuthenticationModal();
+    const { currentUser } = useUser();
     
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
@@ -207,9 +209,12 @@ const LeftSidebar = (
                 <p>New Chat</p>
                 <p className="text-xl ml-2 mb-1">+</p>
             </FinDiffButton>
-            <button className="mt-auto h-[5%] w-65 flex items-center gap-x-2 border-t border-gray-200 cursor-pointer" onClick={()=>setIsSignInModalOpen(true)}>
+            <button 
+                className="mt-auto h-[5%] w-65 flex items-center gap-x-2 border-t border-gray-200 cursor-pointer" 
+                onClick={currentUser ? ()=>setAuthenticationModal(AuthenticationModalType.LOGOUT) : ()=>setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+            >
                 <img src="/images/UserAvatar.png" className="h-10 w-10 p-1 ml-4"/>
-                <p>Sign In</p>
+                <p>{currentUser ? currentUser.email : 'Sign In'}</p>
             </button>
         </div>
     );

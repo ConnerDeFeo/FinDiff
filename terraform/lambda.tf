@@ -70,6 +70,11 @@ locals {
       source_dir  = "../server/lambdas/cognito/verify_auth_challenge"
       output_path = "../server/lambdas/cognito/zips/verify_auth_challenge.zip"
       layers      = []
+    },
+    "pre_sign_up" = {
+      source_dir  = "../server/lambdas/cognito/pre_sign_up"
+      output_path = "../server/lambdas/cognito/zips/pre_sign_up.zip"
+      layers      = []
     }
   }
   layers = {

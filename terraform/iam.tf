@@ -57,8 +57,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
         Resource = [
           aws_dynamodb_table.websocket_connections.arn, 
           aws_dynamodb_table.processed_documents.arn,
-          aws_dynamodb_table.conversation_history.arn,
-          aws_dynamodb_table.user_data.arn
+          aws_dynamodb_table.conversation_history.arn
         ]
       }
     ]
@@ -146,24 +145,12 @@ resource "aws_iam_role_policy" "ses_send_email" {
 }
 
 # Allow cognito lambda triggers
-resource "aws_iam_role_policy" "cognito_lambda_triggers" {
-  name = "cognito_lambda_triggers_policy"
-  role = aws_iam_role.lambda_role.id
+resource "aws_lambda_permission" "allow_cognito" {
+  for_each = aws_lambda_function.lambdas
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "lambda:InvokeFunction"
-        ]
-        Resource = [
-          aws_lambda_function.lambdas["define_auth_challenge"].arn,
-          aws_lambda_function.lambdas["create_auth_challenge"].arn,
-          aws_lambda_function.lambdas["verify_auth_challenge"].arn
-        ]
-      }
-    ]
-  })
+  statement_id  = "AllowExecutionFromCognito-${each.value.function_name}"
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.main.arn
 }
