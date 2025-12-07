@@ -3,7 +3,7 @@ import './global.css'
 import { AuthenticationModalProvider } from "./common/hooks/useAuthenticationModal";
 import { UserProvider } from "./common/hooks/useUser";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import GoogleCallBack from "./pages/GoogleCallBack";
+import Profile from "./pages/Profile";
 
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
         <AuthenticationModalProvider>
           <Routes>
             <Route path="/" element={<MainPage />} />
-            <Route path="/GoogleCallBack" element={<GoogleCallBack />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </AuthenticationModalProvider>
       </UserProvider>

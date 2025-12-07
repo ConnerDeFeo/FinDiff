@@ -1,12 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import SignUpModal from "../component/SignUpModal";
-import LogoutModal from "../component/LogoutModal";
 import { useUser } from "./useUser";
 import { fetchUserAttributes } from "aws-amplify/auth";
 
 export enum AuthenticationModalType {
     SIGNIN= 'signin',
-    LOGOUT= 'logout',
     NONE= 'none'
 };
 
@@ -45,7 +43,6 @@ export const AuthenticationModalProvider = ({ children }: { children: React.Reac
         <AuthenticationModalContext.Provider value={{ authenticationModal, setAuthenticationModal }}>
             {children}
             <SignUpModal isOpen={authenticationModal === AuthenticationModalType.SIGNIN} onClose={() => setAuthenticationModal(AuthenticationModalType.NONE)} />
-            <LogoutModal isOpen={authenticationModal === AuthenticationModalType.LOGOUT} onClose={() => setAuthenticationModal(AuthenticationModalType.NONE)} />
         </AuthenticationModalContext.Provider>
     );
 };

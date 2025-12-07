@@ -10,6 +10,7 @@ import SectionSelection from "./SectionSelection";
 import type { Message } from "../../../common/types/Message";
 import { AuthenticationModalType, useAuthenticationModal } from "../../../common/hooks/useAuthenticationModal";
 import { useUser } from "../../../common/hooks/useUser";
+import { useNavigate } from "react-router-dom";
 
 
 const LeftSidebar = (
@@ -58,6 +59,7 @@ const LeftSidebar = (
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
     const { setAuthenticationModal } = useAuthenticationModal();
     const { currentUser } = useUser();
+    const navigate = useNavigate();
     
     const handleSubmit = async () => {
         if (selectedDocuments.length === 0 || !selectedSection || !selectedStock) return;
@@ -211,7 +213,7 @@ const LeftSidebar = (
             </FinDiffButton>
             <button 
                 className="mt-auto h-[5%] w-65 flex items-center gap-x-2 border-t border-gray-200 cursor-pointer" 
-                onClick={currentUser ? ()=>setAuthenticationModal(AuthenticationModalType.LOGOUT) : ()=>setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+                onClick={currentUser ? ()=>navigate("/profile") : ()=>setAuthenticationModal(AuthenticationModalType.SIGNIN)}
             >
                 <img src="/images/UserAvatar.png" className="h-10 w-10 p-1 ml-4"/>
                 <p>{currentUser ? currentUser.email : 'Sign In'}</p>
