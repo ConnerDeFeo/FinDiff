@@ -1,20 +1,24 @@
 import MainPage from "./pages/main/MainPage";
 import './global.css'
 import { AuthenticationModalProvider } from "./common/hooks/useAuthenticationModal";
-import { Amplify } from 'aws-amplify';
-import amplifyConfig from "./AmplifyConfiguration";
 import { UserProvider } from "./common/hooks/useUser";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import GoogleCallBack from "./pages/GoogleCallBack";
 
-// Configure Amplify with your AWS resources
-Amplify.configure(amplifyConfig);
 
 function App() {
   return(
-    <UserProvider>
+    <BrowserRouter>
+      <UserProvider>
         <AuthenticationModalProvider>
-          <MainPage />
+          <Routes>
+            <Route path="/" element={<MainPage />} />
+            <Route path="/GoogleCallBack" element={<GoogleCallBack />} />
+          </Routes>
         </AuthenticationModalProvider>
-    </UserProvider>
+      </UserProvider>
+    </BrowserRouter>
+    
   );
 }
 

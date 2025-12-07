@@ -30,8 +30,67 @@ resource "aws_cognito_user_pool_client" "client" {
     user_pool_id = aws_cognito_user_pool.main.id
     generate_secret = false
 
+    allowed_oauth_flows_user_pool_client = true
+
     explicit_auth_flows = [
         "ALLOW_CUSTOM_AUTH",
-        "ALLOW_REFRESH_TOKEN_AUTH",
+        "ALLOW_REFRESH_TOKEN_AUTH"
     ]
+
+    supported_identity_providers = [
+        "COGNITO",
+        "Google"
+    ]
+
+    callback_urls = [
+        "http://localhost:5173",
+        "https://findiff.com"
+    ]
+
+    logout_urls = [
+        "http://localhost:5173",
+        "https://findiff.com"
+    ]
+
+    allowed_oauth_flows = [
+        "code"
+    ]
+
+    allowed_oauth_scopes = [
+        "email",
+        "openid",
+        "profile",
+        "aws.cognito.signin.user.admin"
+    ]
+}
+
+# Add google as an identity provider
+resource "aws_cognito_identity_provider" "google" {
+    user_pool_id = aws_cognito_user_pool.main.id
+    provider_name = "Google"
+    provider_type = "Google"
+
+    attribute_mapping = {
+        email = "email"
+        username = "sub"
+        email_verified = "email_verified"
+    }
+
+    provider_details = {
+        client_id     = var.google_client_id
+        client_secret = var.google_client_secret
+        authorize_scopes = "email profile openid"
+    }
+}
+
+# Domain for Cognito Hosted UI
+resource "aws_cognito_user_pool_domain" "main" {
+    domain       = "findiff-auth-domain"
+    user_pool_id = aws_cognito_user_pool.main.id
+}
+
+# Output the domain URL
+output "cognito_domain_url" {
+    value = aws_cognito_user_pool_domain.main.domain
+    description = "The domain URL for the Cognito Hosted UI"
 }

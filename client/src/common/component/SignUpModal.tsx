@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FinDiffButton from "./FinDiffButton";
-import { signIn, signUp, confirmSignIn } from 'aws-amplify/auth';
+import { signIn, signUp, confirmSignIn, signInWithRedirect} from 'aws-amplify/auth';
 
 const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
@@ -71,6 +71,13 @@ const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                     {!isVerifying ? (
                         /* Email input form */
                         <div className="flex flex-col gap-y-3">
+                            <button 
+                                className="cursor-pointer border-2 border-gray-300 rounded-lg py-2 flex items-center justify-center mb-4 hover:bg-gray-100 transition-colors" 
+                                onClick={() => signInWithRedirect({ provider: 'Google'})}
+                            >
+                                <img src="/images/Google.webp" alt="Google logo" className="w-4 h-4 mr-2"/>
+                                Sign in with Google
+                            </button>
                             <input 
                                 type="email"
                                 value={email}

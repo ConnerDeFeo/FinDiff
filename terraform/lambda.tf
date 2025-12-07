@@ -135,11 +135,5 @@ resource "aws_lambda_function" "lambdas" {
   timeout          = 500
   memory_size      = 512
 
-  environment {
-    variables = {
-      PINECONE_API_KEY = var.pinecone_api_key
-    }
-  }
-
   layers           = [for layer_name in each.value.layers : aws_lambda_layer_version.lambda_layers[layer_name].arn]
 }
