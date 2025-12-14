@@ -75,6 +75,16 @@ locals {
       source_dir  = "../server/lambdas/cognito/pre_sign_up"
       output_path = "../server/lambdas/cognito/zips/pre_sign_up.zip"
       layers      = []
+    },
+    "create_checkout_session" = {
+      source_dir  = "../server/lambdas/stripe/create_checkout_session"
+      output_path = "../server/lambdas/stripe/zips/create_checkout_session.zip"
+      layers      = ["user_auth", "utils"]
+    },
+    "stripe_webhook" = {
+      source_dir  = "../server/lambdas/stripe/stripe_webhook"
+      output_path = "../server/lambdas/stripe/zips/stripe_webhook.zip"
+      layers      = ["utils", "dynamo"]
     }
   }
   layers = {
@@ -134,6 +144,14 @@ resource "aws_lambda_function" "lambdas" {
   source_code_hash = data.archive_file.lambda_archives[each.key].output_base64sha256
   timeout          = 500
   memory_size      = 512
+
+  environment {
+    variables = {
+      STRIPE_SECRET_KEY         = var.stripe_test_secret_key
+      FINDIFF_PREMIUM_PRICE_KEY = var.findiff_test_premium_price_key
+      STRIPE_WEBHOOK_SECRET     = var.stripe_webhook_secret
+    }
+  }
 
   layers           = [for layer_name in each.value.layers : aws_lambda_layer_version.lambda_layers[layer_name].arn]
 }

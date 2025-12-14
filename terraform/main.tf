@@ -60,6 +60,23 @@ resource "aws_dynamodb_table" "conversation_history" {
   }
 }
 
+# DynamoDB for storing user details
+resource "aws_dynamodb_table" "user_details" {
+  name         = "user_details"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "FinDiff User Details"
+    Environment = "prod"
+  }
+}
+
 # Create s3 bucket to store company filings
 resource "aws_s3_bucket" "company_filings" {
   bucket = "findiff-bucket-prod"

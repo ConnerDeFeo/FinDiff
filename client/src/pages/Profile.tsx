@@ -2,6 +2,7 @@ import { signOut } from "aws-amplify/auth";
 import FinDiffButton from "../common/component/FinDiffButton";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../common/hooks/useUser";
+import stripeService from "../service/StripeService";
 
 const Profile = () => {
     const navigate = useNavigate(); 
@@ -12,9 +13,28 @@ const Profile = () => {
         navigate("/");
     }
 
+    const handleManageSubscription = async () => {
+        const resp = await stripeService.createCheckoutSession();
+        if(resp.ok){
+            const data = await resp.json();
+            window.location.href = data.url;
+        }
+    }
+
     return(
         <div className="min-h-screen findiff-bg-white p-8">
             <div className="max-w-2xl mx-auto">
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6 transition-colors cursor-pointer"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span className="font-medium">Back</span>
+                </button>
+
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r findiff-primary-blue bg-clip-text text-transparent">
@@ -38,6 +58,17 @@ const Profile = () => {
                             </svg>
                             <span className="text-gray-800">{currentUser?.email || 'No email available'}</span>
                         </div>
+                    </div>
+
+                    {/**Subscription Button */}
+                    <div className="mb-6">
+                        <FinDiffButton 
+                            gray
+                            onClick={handleManageSubscription} 
+                            className="w-full"
+                        >
+                            Manage Subscription
+                        </FinDiffButton>
                     </div>
                 </div>
 

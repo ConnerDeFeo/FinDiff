@@ -1,5 +1,8 @@
 # Define local variables for Lambda functions and their HTTP methods
 locals {
+  protected_lambdas = [
+    "create_checkout_session"
+  ]
   lambdas = {
     # GET Lambdas
     "search_tickers" = {lambda = aws_lambda_function.lambdas["search_tickers"], method = "GET"}
@@ -7,7 +10,9 @@ locals {
     "check_document_processed" = {lambda = aws_lambda_function.lambdas["check_document_processed"], method = "GET"}
 
     # POST Lambdas
-
+    "create_checkout_session" = {lambda = aws_lambda_function.lambdas["create_checkout_session"], method = "POST"}
+    "stripe_webhook" = {lambda = aws_lambda_function.lambdas["stripe_webhook"], method = "POST"}
+    
     # DELETE Lambdas
   }
 }
@@ -16,6 +21,14 @@ locals {
 resource "aws_api_gateway_rest_api" "main" {
   name        = "findiff_api"
   description = "API Gateway for FinDiff Application"
+}
+
+# Create Authorizers
+resource "aws_api_gateway_authorizer" "cognito" {
+  name          = "cognito_authorizer"
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  type          = "COGNITO_USER_POOLS"
+  provider_arns  = [aws_cognito_user_pool.main.arn]
 }
 
 # Create API Gateway Resources for each Lambda function
@@ -31,13 +44,14 @@ resource "aws_api_gateway_resource" "main" {
 resource "aws_api_gateway_method" "api_methods" {
   for_each = local.lambdas
 
-  rest_api_id   = aws_api_gateway_rest_api.main.id
-  resource_id   = aws_api_gateway_resource.main[each.key].id
-  http_method   = each.value.method
-  authorization = "NONE"
-  api_key_required = true
-}
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.main[each.key].id
+  http_method = each.value.method
 
+  authorization    = contains(local.protected_lambdas, each.key) ? "COGNITO_USER_POOLS" : "NONE"
+  authorizer_id    = contains(local.protected_lambdas, each.key) ? aws_api_gateway_authorizer.cognito.id : null
+  api_key_required = false
+}
 # Integrate API Gateway Methods with Lambda functions
 resource "aws_api_gateway_integration" "main" {
   for_each = local.lambdas
@@ -60,6 +74,7 @@ resource "aws_api_gateway_method" "options" {
   resource_id   = aws_api_gateway_resource.main[each.key].id
   http_method   = "OPTIONS"
   authorization = "NONE"
+  api_key_required  = false
 }
 
 # Integrate API Gateway Methods with Lambda functions
@@ -88,11 +103,11 @@ resource "aws_api_gateway_method_response" "options" {
     status_code = "200"
     
     response_parameters = {
-        "method.response.header.Access-Control-Allow-Headers" = true
-        "method.response.header.Access-Control-Allow-Methods" = true
-        "method.response.header.Access-Control-Allow-Origin"  = true
+      "method.response.header.Access-Control-Allow-Headers" = true
+      "method.response.header.Access-Control-Allow-Methods" = true
+      "method.response.header.Access-Control-Allow-Origin"  = true
     }
-
+    
     depends_on = [aws_api_gateway_integration.options]
 }
 
@@ -131,6 +146,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [
     aws_api_gateway_method.api_methods,
     aws_api_gateway_integration.main,
+    aws_api_gateway_method.options,
+    aws_api_gateway_integration.options,
     aws_api_gateway_method_response.options,
     aws_api_gateway_integration_response.options
   ]
@@ -141,7 +158,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     redeployment = sha1(jsonencode(local.lambdas))
   }
 
-  # Add this lifecycle block
   lifecycle {
     create_before_destroy = true
   }
@@ -152,19 +168,6 @@ resource "aws_api_gateway_stage" "api_stage" {
   stage_name    = "prod"
   rest_api_id   = aws_api_gateway_rest_api.main.id
   deployment_id = aws_api_gateway_deployment.api_deployment.id
-}
-
-# Specific limits for comparison endpoint
-resource "aws_api_gateway_method_settings" "compare_settings" {
-  rest_api_id = aws_api_gateway_rest_api.main.id
-  stage_name  = aws_api_gateway_stage.api_stage.stage_name
-  method_path = "compare_10k_filings/POST"
-
-  settings {
-    throttling_burst_limit = 2
-    throttling_rate_limit  = 1
-    metrics_enabled        = true
-  }
 }
 
 # Create an API Key for accessing the API

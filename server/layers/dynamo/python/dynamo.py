@@ -11,12 +11,11 @@ def put_item(table_name: str, item: dict):
     table = dynamodb.Table(table_name) # type: ignore
     table.put_item(Item=item)
 
-def update_item(table_name: str, key: dict, update_expression: str, expression_attribute_names: dict, expression_attribute_values: dict):
+def update_item(table_name: str, key: dict, update_expression: str, expression_attribute_values: dict):
     table = dynamodb.Table(table_name) # type: ignore
     table.update_item(
         Key=key,
         UpdateExpression=update_expression,
-        ExpressionAttributeNames=expression_attribute_names,
         ExpressionAttributeValues=expression_attribute_values
     )
 
