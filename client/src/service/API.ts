@@ -2,12 +2,9 @@ import { fetchAuthSession } from "aws-amplify/auth";
 
 const API_KEY = import.meta.env.VITE_AWS_API_KEY;
 
-const getIdToken = async (): Promise<string> => {
+const getIdToken = async (): Promise<string | undefined> => {
     const session = await fetchAuthSession();
     const idToken = session.tokens?.idToken?.toString();
-    if (!idToken) {
-        throw new Error("User is not authenticated, ID token is missing.");
-    }
     return idToken;
 }
 

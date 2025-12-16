@@ -2,6 +2,7 @@ import { useState } from "react";
 import FindiffDropDown from "../../../common/component/display/FindiffDropDown";
 import { WebSocketMessageType } from "../../../common/variables/Enums";
 import secService from "../../../service/SecService";
+import { useUser } from "../../../common/hooks/useUser";
 
 const SelectedDocuments = (
     {
@@ -30,6 +31,8 @@ const SelectedDocuments = (
         setDisableSendButton: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
     const [uploadProgress, setUploadProgress] = useState<Record<string, {completed: number, total: number}>>({});
+    const {currentUser} = useUser();
+
     const uploadDocument = async (filing: {accessionNumber:string, filingDate:string, primaryDocument:string}) => {
         const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL as string);
         websocket.onopen = () => {
@@ -91,7 +94,8 @@ const SelectedDocuments = (
     }
 
     const addDocument = async () => {
-        if (!currentFilingSelection || selectedDocuments.length >= 2) return;
+        const maxDocuments = currentUser ? 2 : 1;
+        if (!currentFilingSelection || selectedDocuments.length >= maxDocuments) return;
         const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === currentFilingSelection);
         const resp = await secService.checkDocumentProcessed(
             selectedCik,
@@ -118,7 +122,7 @@ const SelectedDocuments = (
     return(
         <div className="pb-6 border-b border-gray-200">
             <h3 className="text-sm font-semibold findiff-secondary-blue mb-3">
-                Selected 10-K Documents ({selectedDocuments.length}/2)
+                Selected 10-K Documents ({selectedDocuments.length}/{currentUser ? 2 : 1})
             </h3>
             {selectedDocuments.length > 0 ? (
                 <div className="gap-y-2 mb-3">
@@ -170,7 +174,7 @@ const SelectedDocuments = (
                 <p className="text-xs text-gray-500 mb-3">No documents selected</p>
             )}
             
-            {selectedDocuments.length < 2 && (
+            {selectedDocuments.length < (currentUser ? 2 : 1) && (
                 <div className="space-y-2">
                     <div className="flex gap-2">
                         <FindiffDropDown
@@ -192,8 +196,16 @@ const SelectedDocuments = (
                     </div>
                     <p className="text-xs text-gray-500">
                         {selectedDocuments.length === 0 
-                            ? 'Add 1 document for single analysis, or 2 for comparison' 
+                            ? (currentUser ? 'Add 1 document for single analysis, or 2 for comparison' : 'Add 1 document for analysis')
                             : 'Add 1 more document for comparison analysis'}
+                    </p>
+                </div>
+            )}
+            
+            {!currentUser && selectedDocuments.length >= 1 && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                        <span className="font-semibold">Sign in</span> to compare multiple documents and unlock advanced features
                     </p>
                 </div>
             )}
