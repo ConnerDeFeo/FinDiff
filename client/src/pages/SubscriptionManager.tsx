@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import stripeService from "../service/StripeService";
 import FinDiffButton from "../common/component/FinDiffButton";
+import { useUser } from "../common/hooks/useUser";
 
 const SubscriptionManager = () => {
     const navigate = useNavigate();
+    const { currentUser } = useUser();
     
     const subscribeToPremium = async () => {
         const resp = await stripeService.createCheckoutSession();
@@ -40,7 +42,14 @@ const SubscriptionManager = () => {
                 {/* Pricing Cards */}
                 <div className="grid md:grid-cols-2 gap-8 mx-auto">
                     {/* Free Tier */}
-                    <div className="bg-white rounded-lg shadow-md border-2 border-gray-200 p-8 flex flex-col">
+                    <div className={`bg-white rounded-lg shadow-md border-2 p-8 flex flex-col ${!currentUser?.premium ? 'border-green-500' : 'border-gray-200'}`}>
+                        {!currentUser?.premium && (
+                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                                    CURRENT PLAN
+                                </span>
+                            </div>
+                        )}
                         <div className="mb-6">
                             <h2 className="text-2xl font-bold text-gray-800 mb-2">Free</h2>
                             <div className="flex items-baseline mb-4">
@@ -79,21 +88,29 @@ const SubscriptionManager = () => {
                             </ul>
                         </div>
 
-                        <button
-                            disabled
-                            className="w-full py-3 px-6 border-2 border-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
-                        >
-                            Current Plan
-                        </button>
+                        {!currentUser?.premium && (
+                            <button
+                                disabled
+                                className="w-full py-3 px-6 border-2 border-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
+                            >
+                                Current Plan
+                            </button>
+                        )}
                     </div>
 
                     {/* Premium Tier */}
-                    <div className="bg-white rounded-lg shadow-xl border-2 border-blue-500 p-8 flex flex-col relative">
-                        {/* Popular Badge */}
+                    <div className={`bg-white rounded-lg shadow-xl border-2 p-8 flex flex-col relative ${currentUser?.premium ? 'border-blue-500' : 'border-blue-500'}`}>
+                        {/* Badge */}
                         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                            <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                                POPULAR
-                            </span>
+                            {currentUser?.premium ? (
+                                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                                    CURRENT PLAN
+                                </span>
+                            ) : (
+                                <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                                    POPULAR
+                                </span>
+                            )}
                         </div>
 
                         <div className="mb-6">
@@ -146,12 +163,21 @@ const SubscriptionManager = () => {
                             </ul>
                         </div>
 
-                        <FinDiffButton
-                            onClick={subscribeToPremium}
-                            className="w-full"
-                        >
-                            Upgrade to Premium
-                        </FinDiffButton>
+                        {currentUser?.premium ? (
+                            <button
+                                disabled
+                                className="w-full py-3 px-6 border-2 border-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
+                            >
+                                Current Plan
+                            </button>
+                        ) : (
+                            <FinDiffButton
+                                onClick={subscribeToPremium}
+                                className="w-full"
+                            >
+                                Upgrade to Premium
+                            </FinDiffButton>
+                        )}
                     </div>
                 </div>
 
