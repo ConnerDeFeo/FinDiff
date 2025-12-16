@@ -2,6 +2,7 @@ import json
 import stripe
 import os
 from dynamo import update_item, put_item
+from datetime import datetime, timezone
 
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 webhook_secret = os.environ.get('STRIPE_COMPLETED_CHECKOUT_WEBHOOK_SECRET')
@@ -38,6 +39,10 @@ def stripe_completed_checkout_webhook(event, context):
             customer_id = session.get('customer')
             subscription_id = session.get('subscription')
             cognito_user_id = session.get('metadata', {}).get('cognito_user_id')
+
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            next_billing_ts = subscription["items"]["data"][0]["current_period_end"]
+            next_billing = datetime.fromtimestamp(next_billing_ts, timezone.utc).isoformat().split("T")[0]
         
             update_item(
                 table_name="user_details", 
@@ -46,13 +51,15 @@ def stripe_completed_checkout_webhook(event, context):
                     SET stripe_customer_id = :cid, 
                     stripe_subscription_id = :sid, 
                     subscription_status = :status, 
-                    subscription_tier = :tier
+                    subscription_tier = :tier,
+                    next_billing_date = :nbd
                 """,
                 expression_attribute_values = {
                     ":cid": customer_id, 
                     ":sid": subscription_id, 
                     ":status": "active", 
                     ":tier": "premium",
+                    ":nbd": next_billing,
                 },
             )
 

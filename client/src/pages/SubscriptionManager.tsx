@@ -28,13 +28,13 @@ const SubscriptionManager = () => {
             <div className="max-w-4xl mx-auto">
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/profile")}
                     className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6 transition-colors cursor-pointer"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span className="font-medium">Back to Home</span>
+                    <span className="font-medium">Back</span>
                 </button>
 
                 {/* Header */}
@@ -116,6 +116,14 @@ const SubscriptionManager = () => {
                                 <span className="text-gray-600 ml-2">/month</span>
                             </div>
                             <p className="text-gray-600">Advanced features for serious investors</p>
+                            {currentUser?.premium && currentUser?.nextBillingDate && (
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <p className="text-sm text-gray-700">
+                                        <span className="font-medium">Next billing date:</span>{" "}
+                                        <span className="text-blue-700">{new Date(currentUser.nextBillingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex-1 mb-6">
