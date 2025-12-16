@@ -85,6 +85,11 @@ locals {
       source_dir  = "../server/lambdas/stripe/stripe_webhook"
       output_path = "../server/lambdas/stripe/zips/stripe_webhook.zip"
       layers      = ["utils", "dynamo"]
+    },
+    "check_subscription"={
+      source_dir  = "../server/lambdas/check_subscription"
+      output_path = "../server/lambdas/zips/check_subscription.zip"
+      layers      = ["user_auth", "dynamo"]
     }
   }
   layers = {

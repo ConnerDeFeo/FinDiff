@@ -16,7 +16,6 @@ def check_document_processed(event, context):
             table_name='processed_documents',
             key={'document_id': f"{cik}_{accession}_{primary_doc}"}
         )
-        print(response)
         return {
             'statusCode': 200,
             'body': json.dumps({'processed': response is not None}),

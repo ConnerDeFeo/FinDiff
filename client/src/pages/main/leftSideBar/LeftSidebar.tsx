@@ -216,7 +216,17 @@ const LeftSidebar = (
                 onClick={currentUser ? ()=>navigate("/profile") : ()=>setAuthenticationModal(AuthenticationModalType.SIGNIN)}
             >
                 <img src="/images/UserAvatar.png" className="h-10 w-10 p-1 ml-4"/>
-                <p>{currentUser ? currentUser.email : 'Sign In'}</p>
+
+                <div>
+                    {currentUser ? 
+                        <div className="text-left text-sm">
+                            <p>{currentUser.email}</p>
+                            <p className=" text-gray-500">{currentUser.premium ? "Premium User" : "Free User"}</p>
+                        </div>
+                        : 
+                        <p>Sign In</p>
+                    }
+                </div>
             </button>
         </div>
     );

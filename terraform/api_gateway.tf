@@ -1,13 +1,15 @@
 # Define local variables for Lambda functions and their HTTP methods
 locals {
   protected_lambdas = [
-    "create_checkout_session"
+    "create_checkout_session",
+    "check_subscription"
   ]
   lambdas = {
     # GET Lambdas
     "search_tickers" = {lambda = aws_lambda_function.lambdas["search_tickers"], method = "GET"}
     "get_available_10k_filings" = {lambda = aws_lambda_function.lambdas["get_available_10k_filings"], method = "GET"}
     "check_document_processed" = {lambda = aws_lambda_function.lambdas["check_document_processed"], method = "GET"}
+    "check_subscription" = {lambda = aws_lambda_function.lambdas["check_subscription"], method = "GET"}
 
     # POST Lambdas
     "create_checkout_session" = {lambda = aws_lambda_function.lambdas["create_checkout_session"], method = "POST"}

@@ -2,7 +2,6 @@ import { signOut } from "aws-amplify/auth";
 import FinDiffButton from "../common/component/FinDiffButton";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../common/hooks/useUser";
-import stripeService from "../service/StripeService";
 
 const Profile = () => {
     const navigate = useNavigate(); 
@@ -14,11 +13,7 @@ const Profile = () => {
     }
 
     const handleManageSubscription = async () => {
-        const resp = await stripeService.createCheckoutSession();
-        if(resp.ok){
-            const data = await resp.json();
-            window.location.href = data.url;
-        }
+        navigate("/subscription-manager");
     }
 
     return(

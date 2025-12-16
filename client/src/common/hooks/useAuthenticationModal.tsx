@@ -1,7 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import SignUpModal from "../component/SignUpModal";
-import { useUser } from "./useUser";
-import { fetchUserAttributes } from "aws-amplify/auth";
 
 export enum AuthenticationModalType {
     SIGNIN= 'signin',
@@ -24,21 +22,6 @@ export const useAuthenticationModal = () => {
 
 export const AuthenticationModalProvider = ({ children }: { children: React.ReactNode })=>{
     const [authenticationModal, setAuthenticationModal] = useState<AuthenticationModalType>(AuthenticationModalType.NONE);
-    const {setCurrentUser} = useUser();
-    useEffect(()=>{
-        const fetchUser = async () => {
-            try{
-                const currentUser = await fetchUserAttributes();
-                currentUser.email = currentUser.email?.toLowerCase();
-                setCurrentUser({email: currentUser.email!});
-            }catch{
-                setCurrentUser(null);
-            }
-        }
-        if(authenticationModal === AuthenticationModalType.NONE){
-            fetchUser();
-        }
-    }, [authenticationModal]);
     return (
         <AuthenticationModalContext.Provider value={{ authenticationModal, setAuthenticationModal }}>
             {children}
