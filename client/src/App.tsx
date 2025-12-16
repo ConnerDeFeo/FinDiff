@@ -22,7 +22,12 @@ function App() {
       currentUser.email = currentUser.email?.toLowerCase();
       if(resp.ok){
         const data = await resp.json();
-        setCurrentUser({email: currentUser.email!, premium: data.subscription_active, nextBillingDate: data.next_billing_date});
+        setCurrentUser({
+          email: currentUser.email!, 
+          premium: data.subscription_active, 
+          nextBillingDate: data.next_billing_date, 
+          cancelAtPeriodEnd: data.cancel_at_period_end
+        });
       }
       else{
         setCurrentUser({email: currentUser.email!, premium: false} );

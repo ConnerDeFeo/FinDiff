@@ -85,11 +85,22 @@ const Profile = () => {
                             )}
                         </div>
                         {currentUser?.premium && currentUser?.nextBillingDate && (
-                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className={`mt-3 p-3 rounded-lg border ${
+                                currentUser?.cancelAtPeriodEnd 
+                                    ? 'bg-orange-50 border-orange-200' 
+                                    : 'bg-blue-50 border-blue-200'
+                            }`}>
                                 <p className="text-sm text-gray-700">
-                                    <span className="font-medium">Next billing date:</span>{" "}
-                                    <span className="text-blue-700">{new Date(currentUser.nextBillingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                    <span className="font-medium">{currentUser?.cancelAtPeriodEnd ? 'Subscription ends on:' : 'Next billing date:'}</span>{" "}
+                                    <span className={currentUser?.cancelAtPeriodEnd ? 'text-orange-700 font-semibold' : 'text-blue-700'}>
+                                        {new Date(currentUser.nextBillingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </span>
                                 </p>
+                                {currentUser?.cancelAtPeriodEnd && (
+                                    <p className="text-xs text-orange-600 mt-1">
+                                        Your subscription will not renew. You'll have access to Premium features until this date.
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

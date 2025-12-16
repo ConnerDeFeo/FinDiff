@@ -52,7 +52,8 @@ def stripe_completed_checkout_webhook(event, context):
                     stripe_subscription_id = :sid, 
                     subscription_status = :status, 
                     subscription_tier = :tier,
-                    next_billing_date = :nbd
+                    next_billing_date = :nbd,
+                    cancel_at_period_end = :cpe
                 """,
                 expression_attribute_values = {
                     ":cid": customer_id, 
@@ -60,6 +61,7 @@ def stripe_completed_checkout_webhook(event, context):
                     ":status": "active", 
                     ":tier": "premium",
                     ":nbd": next_billing,
+                    ":cpe": False
                 },
             )
 

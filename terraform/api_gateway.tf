@@ -17,7 +17,8 @@ locals {
     "create_portal_session" = {lambda = aws_lambda_function.lambdas["create_portal_session"], method = "POST"}
     "stripe_completed_checkout_webhook" = {lambda = aws_lambda_function.lambdas["stripe_completed_checkout_webhook"], method = "POST"}
     "stripe_subscription_ended_webhook" = {lambda = aws_lambda_function.lambdas["stripe_subscription_ended_webhook"], method = "POST"}
-    
+    "stripe_subscription_canceled_webhook" = {lambda = aws_lambda_function.lambdas["stripe_subscription_canceled_webhook"], method = "POST"}
+
     # DELETE Lambdas
   }
 }

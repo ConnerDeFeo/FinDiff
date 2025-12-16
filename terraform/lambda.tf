@@ -100,6 +100,11 @@ locals {
       source_dir  = "../server/lambdas/stripe/stripe_subscription_ended_webhook"
       output_path = "../server/lambdas/stripe/zips/stripe_subscription_ended_webhook.zip"
       layers      = ["dynamo", "utils"]
+    },
+    "stripe_subscription_canceled_webhook" = {
+      source_dir  = "../server/lambdas/stripe/stripe_subscription_canceled_webhook"
+      output_path = "../server/lambdas/stripe/zips/stripe_subscription_canceled_webhook.zip"
+      layers      = ["dynamo", "utils"]
     }
   }
   layers = {
@@ -166,6 +171,7 @@ resource "aws_lambda_function" "lambdas" {
       FINDIFF_PREMIUM_PRICE_KEY = var.findiff_test_premium_price_key
       STRIPE_COMPLETED_CHECKOUT_WEBHOOK_SECRET     = var.stripe_completed_checkout_webhook_secret
       STRIPE_SUBSCRIPTION_ENDED_WEBHOOK_SECRET     = var.stripe_subscription_ended_webhook_secret
+      STRIPE_SUBSCRIPTION_CANCELED_WEBHOOK_SECRET  = var.stripe_subscription_canceled_webhook_secret
     }
   }
 

@@ -45,3 +45,9 @@ variable "stripe_subscription_ended_webhook_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "stripe_subscription_canceled_webhook_secret" {
+  description = "Stripe Webhook Secret for verifying subscription canceled webhook signatures"
+  type        = string
+  sensitive   = true
+}

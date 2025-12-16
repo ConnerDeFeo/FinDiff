@@ -22,7 +22,11 @@ def check_subscription(event, context):
         
         return {
             'statusCode': 200,
-            'body': json.dumps({"subscription_active": user_data["subscription_status"] == "active", "next_billing_date": user_data.get("next_billing_date")}),
+            'body': json.dumps({
+                "subscription_active": user_data["subscription_status"] == "active", 
+                "next_billing_date": user_data.get("next_billing_date"),
+                "cancel_at_period_end": user_data.get("cancel_at_period_end")
+            }),
             'headers': get_auth_header
         }
     
