@@ -90,6 +90,11 @@ locals {
       source_dir  = "../server/lambdas/check_subscription"
       output_path = "../server/lambdas/zips/check_subscription.zip"
       layers      = ["user_auth", "dynamo"]
+    },
+    "create_portal_session" = {
+      source_dir  = "../server/lambdas/stripe/create_portal_session"
+      output_path = "../server/lambdas/stripe/zips/create_portal_session.zip"
+      layers      = ["user_auth", "dynamo", "utils"]
     }
   }
   layers = {

@@ -14,6 +14,7 @@ locals {
     # POST Lambdas
     "create_checkout_session" = {lambda = aws_lambda_function.lambdas["create_checkout_session"], method = "POST"}
     "stripe_webhook" = {lambda = aws_lambda_function.lambdas["stripe_webhook"], method = "POST"}
+    "create_portal_session" = {lambda = aws_lambda_function.lambdas["create_portal_session"], method = "POST"}
     
     # DELETE Lambdas
   }
