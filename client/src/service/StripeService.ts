@@ -8,6 +8,9 @@ const stripeService = {
     },
     checkSubscription: async () => {
         return await API.get(`${URL}/check_subscription`);
+    },
+    createPortalSession: async () => {
+        return await API.post(`${URL}/create_portal_session`);
     }
 };
 

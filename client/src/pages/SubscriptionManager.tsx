@@ -15,6 +15,14 @@ const SubscriptionManager = () => {
         }
     }
 
+    const manageSubscription = async () => {
+        const resp = await stripeService.createPortalSession();
+        if(resp.ok){
+            const data = await resp.json();
+            window.location.href = data.url;
+        }
+    }
+
     return(
         <div className="min-h-screen findiff-bg-white p-8">
             <div className="max-w-4xl mx-auto">
@@ -97,7 +105,7 @@ const SubscriptionManager = () => {
                         {/* Badge */}
                         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                             <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                                POPULAR
+                                {currentUser?.premium ? "CURRENT PLAN" : "POPULAR"}
                             </span>
                         </div>
 
@@ -150,22 +158,12 @@ const SubscriptionManager = () => {
                                 </li>
                             </ul>
                         </div>
-
-                        {currentUser?.premium ? (
-                            <button
-                                disabled
-                                className="w-full py-3 px-6 border-2 border-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed"
-                            >
-                                Current Plan
-                            </button>
-                        ) : (
-                            <FinDiffButton
-                                onClick={subscribeToPremium}
-                                className="w-full"
-                            >
-                                Upgrade to Premium
-                            </FinDiffButton>
-                        )}
+                        <FinDiffButton
+                            onClick={ currentUser?.premium ? manageSubscription : subscribeToPremium}
+                            className="w-full"
+                        >
+                            {currentUser?.premium ? "Manage Subscription" : "Upgrade to Premium"}
+                        </FinDiffButton>
                     </div>
                 </div>
 

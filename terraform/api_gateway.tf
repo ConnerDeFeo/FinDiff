@@ -2,7 +2,8 @@
 locals {
   protected_lambdas = [
     "create_checkout_session",
-    "check_subscription"
+    "check_subscription",
+    "create_portal_session"
   ]
   lambdas = {
     # GET Lambdas
