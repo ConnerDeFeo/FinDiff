@@ -81,11 +81,6 @@ locals {
       output_path = "../server/lambdas/stripe/zips/create_checkout_session.zip"
       layers      = ["user_auth", "utils"]
     },
-    "stripe_webhook" = {
-      source_dir  = "../server/lambdas/stripe/stripe_webhook"
-      output_path = "../server/lambdas/stripe/zips/stripe_webhook.zip"
-      layers      = ["utils", "dynamo"]
-    },
     "check_subscription"={
       source_dir  = "../server/lambdas/check_subscription"
       output_path = "../server/lambdas/zips/check_subscription.zip"
@@ -95,6 +90,16 @@ locals {
       source_dir  = "../server/lambdas/stripe/create_portal_session"
       output_path = "../server/lambdas/stripe/zips/create_portal_session.zip"
       layers      = ["user_auth", "dynamo", "utils"]
+    },
+    "stripe_completed_checkout_webhook" = {
+      source_dir  = "../server/lambdas/stripe/stripe_completed_checkout_webhook"
+      output_path = "../server/lambdas/stripe/zips/stripe_completed_checkout_webhook.zip"
+      layers      = ["dynamo", "utils"]
+    },
+    "stripe_subscription_ended_webhook" = {
+      source_dir  = "../server/lambdas/stripe/stripe_subscription_ended_webhook"
+      output_path = "../server/lambdas/stripe/zips/stripe_subscription_ended_webhook.zip"
+      layers      = ["dynamo", "utils"]
     }
   }
   layers = {
@@ -159,7 +164,8 @@ resource "aws_lambda_function" "lambdas" {
     variables = {
       STRIPE_SECRET_KEY         = var.stripe_test_secret_key
       FINDIFF_PREMIUM_PRICE_KEY = var.findiff_test_premium_price_key
-      STRIPE_WEBHOOK_SECRET     = var.stripe_webhook_secret
+      STRIPE_COMPLETED_CHECKOUT_WEBHOOK_SECRET     = var.stripe_completed_checkout_webhook_secret
+      STRIPE_SUBSCRIPTION_ENDED_WEBHOOK_SECRET     = var.stripe_subscription_ended_webhook_secret
     }
   }
 

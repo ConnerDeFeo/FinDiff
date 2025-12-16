@@ -58,7 +58,8 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           aws_dynamodb_table.websocket_connections.arn, 
           aws_dynamodb_table.processed_documents.arn,
           aws_dynamodb_table.conversation_history.arn,
-          aws_dynamodb_table.user_details.arn
+          aws_dynamodb_table.user_details.arn,
+          aws_dynamodb_table.stripe_customers.arn
         ]
       }
     ]

@@ -34,8 +34,14 @@ variable "findiff_test_premium_price_key" {
   sensitive   = true
 }
 
-variable "stripe_webhook_secret" {
+variable "stripe_completed_checkout_webhook_secret" {
   description = "Stripe Webhook Secret for verifying webhook signatures"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_subscription_ended_webhook_secret" {
+  description = "Stripe Webhook Secret for verifying subscription ended webhook signatures"
   type        = string
   sensitive   = true
 }

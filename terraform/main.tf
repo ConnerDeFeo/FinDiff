@@ -77,6 +77,23 @@ resource "aws_dynamodb_table" "user_details" {
   }
 }
 
+# DynamoDB for mapping stripe customers to user ids
+resource "aws_dynamodb_table" "stripe_customers" {
+  name         = "stripe_customers"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "stripe_customer_id"
+
+  attribute {
+    name = "stripe_customer_id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "FinDiff Stripe Customers"
+    Environment = "prod"
+  }
+}
+
 # Create s3 bucket to store company filings
 resource "aws_s3_bucket" "company_filings" {
   bucket = "findiff-bucket-prod"
