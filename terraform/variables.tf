@@ -51,3 +51,9 @@ variable "stripe_subscription_canceled_webhook_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "aws_region" {
+  description = "AWS region to deploy resources in"
+  type        = string
+  default     = "us-east-2"
+}

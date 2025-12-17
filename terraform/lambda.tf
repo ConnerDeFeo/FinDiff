@@ -105,6 +105,11 @@ locals {
       source_dir  = "../server/lambdas/stripe/stripe_subscription_canceled_webhook"
       output_path = "../server/lambdas/stripe/zips/stripe_subscription_canceled_webhook.zip"
       layers      = ["dynamo", "utils"]
+    },
+    "findiff_lambda_authorizer" = {
+      source_dir  = "../server/lambdas/findiff_lambda_authorizer"
+      output_path = "../server/lambdas/zips/findiff_lambda_authorizer.zip"
+      layers      = ["utils"]
     }
   }
   layers = {

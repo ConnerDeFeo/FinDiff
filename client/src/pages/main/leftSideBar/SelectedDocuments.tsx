@@ -3,6 +3,7 @@ import FindiffDropDown from "../../../common/component/display/FindiffDropDown";
 import { WebSocketMessageType } from "../../../common/variables/Enums";
 import secService from "../../../service/SecService";
 import { useUser } from "../../../common/hooks/useUser";
+import { WebSocketService } from "../../../service/WebSocketService";
 
 const SelectedDocuments = (
     {
@@ -34,7 +35,7 @@ const SelectedDocuments = (
     const {currentUser} = useUser();
 
     const uploadDocument = async (filing: {accessionNumber:string, filingDate:string, primaryDocument:string}) => {
-        const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL as string);
+        const websocket = await WebSocketService.createSecureWebSocket();
         websocket.onopen = () => {
             console.log(`Uploading document for filing date: ${filing.filingDate}`);
             setDisableSendButton(true);

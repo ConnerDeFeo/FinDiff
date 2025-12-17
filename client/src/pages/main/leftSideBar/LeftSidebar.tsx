@@ -11,6 +11,7 @@ import type { Message } from "../../../common/types/Message";
 import { AuthenticationModalType, useAuthenticationModal } from "../../../common/hooks/useAuthenticationModal";
 import { useUser } from "../../../common/hooks/useUser";
 import { useNavigate } from "react-router-dom";
+import { WebSocketService } from "../../../service/WebSocketService";
 
 
 const LeftSidebar = (
@@ -102,7 +103,7 @@ const LeftSidebar = (
                 section: selectedSection,
             }
         }
-        const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL!);
+        const websocket = await WebSocketService.createSecureWebSocket();;
         websocket.onopen = () => {
             console.log("WebSocket connection opened");
             setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "", section: selectedSection.replaceAll('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}]);

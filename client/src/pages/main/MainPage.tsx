@@ -8,6 +8,7 @@ import MessageDisplay from "./MessageDisplay";
 import { useUser } from "../../common/hooks/useUser";
 import { LocalStorageKeys } from "../../common/variables/LocalStorageKeys";
 import { AuthenticationModalType, useAuthenticationModal } from "../../common/hooks/useAuthenticationModal";
+import { WebSocketService } from "../../service/WebSocketService";
 
 const MainPage = () => {
     // Buffer for incoming streamed content chunks
@@ -74,7 +75,7 @@ const MainPage = () => {
             setAnalysisMode('chatbot');
         
             // Create WebSocket connection on-demand
-            const websocket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL);
+            const websocket = await WebSocketService.createSecureWebSocket();
             
             // Build payload based on number of selected documents
             const payload = selectedDocuments.length === 1 ? {

@@ -1,2 +1,4 @@
 requests
 stripe
+jwt
+PyJWT[crypto]
