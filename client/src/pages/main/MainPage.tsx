@@ -5,6 +5,9 @@ import LeftSidebar from "./leftSideBar/LeftSidebar";
 import type { Message } from "../../common/types/Message";
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import MessageDisplay from "./MessageDisplay";
+import { useUser } from "../../common/hooks/useUser";
+import { LocalStorageKeys } from "../../common/variables/LocalStorageKeys";
+import { AuthenticationModalType, useAuthenticationModal } from "../../common/hooks/useAuthenticationModal";
 
 const MainPage = () => {
     // Buffer for incoming streamed content chunks
@@ -35,6 +38,10 @@ const MainPage = () => {
     const [disableSendButton, setDisableSendButton] = useState<boolean>(false);
     // Unique ID for the current conversation thread
     const [conversationId, setConversationId] = useState<string>('');
+    const {currentUser} = useUser();
+    const {setAuthenticationModal} = useAuthenticationModal();
+    const remChats = localStorage.getItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING);
+    const displaySignInBanner = !currentUser && remChats && parseInt(remChats) <= 0;
 
     /**
      * Handles submission of user prompt to backend via WebSocket
@@ -42,6 +49,18 @@ const MainPage = () => {
      */
     const handlePromptSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e) e.preventDefault(); // Prevent newline on enter key press
+        if(!currentUser){
+            if(remChats){
+                if(parseInt(remChats) <=0){
+                    setAuthenticationModal(AuthenticationModalType.SIGNIN);
+                    return;
+                }
+                localStorage.setItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING, (parseInt(remChats)-1).toString());
+            }
+            else{
+                localStorage.setItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING, "4");
+            }
+        }
         
         // Disable send button and add user message to chat
         setDisableSendButton(true);
@@ -201,6 +220,25 @@ const MainPage = () => {
             />
             {/* Main Content Area - Chat display and input */}
             <div className="flex-1 flex flex-col relative justify-between h-full overflow-hidden">
+                {/* Sign In Banner */}
+                {displaySignInBanner && (
+                    <div className="w-full bg-gradient-to-r from-blue-200 to-blue-800 text-white py-3 px-6 shadow-lg fixed">
+                        <div className="max-w-4xl mx-auto flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-semibold">You've reached your free chat limit. Sign in to continue using FinDiff!</span>
+                            </div>
+                            <button
+                                onClick={() => setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+                                className="bg-white text-blue-500 font-semibold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            >
+                                Sign In
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {
                     chat.length > 0 ?
                     <Virtuoso
