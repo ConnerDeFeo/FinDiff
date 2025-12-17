@@ -1,6 +1,5 @@
 import MainPage from "./pages/main/MainPage";
 import './global.css'
-import { AuthenticationModalProvider } from "./common/hooks/useAuthenticationModal";
 import { useUser } from "./common/hooks/useUser";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Profile from "./pages/Profile";
@@ -10,6 +9,7 @@ import SubscriptionManager from "./pages/SubscriptionManager";
 import stripeService from "./service/StripeService";
 import { useEffect } from "react";
 import { fetchUserAttributes } from "aws-amplify/auth";
+import { FindiffModalProvider } from "./common/hooks/useFindiffModal";
 
 
 function App() {
@@ -38,7 +38,7 @@ function App() {
 
   return(
     <BrowserRouter>
-      <AuthenticationModalProvider>
+      <FindiffModalProvider>
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/profile" element={<Profile />} />
@@ -46,7 +46,7 @@ function App() {
           <Route path="/cancel" element={<Cancel />} />
           <Route path="/subscription-manager" element={<SubscriptionManager />} />
         </Routes>
-      </AuthenticationModalProvider>
+      </FindiffModalProvider>
     </BrowserRouter>
     
   );

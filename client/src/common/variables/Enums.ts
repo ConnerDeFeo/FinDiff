@@ -2,7 +2,8 @@ export enum WebSocketMessageType {
     Chunk = 'chunk',
     Complete = 'complete',
     Error = 'error',
-    Update = 'update'
+    Update = 'update',
+    FreeTierLimit = 'free_tier_limit'
 } 
 
 export enum MessageRole {

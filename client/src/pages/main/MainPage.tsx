@@ -7,8 +7,8 @@ import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import MessageDisplay from "./MessageDisplay";
 import { useUser } from "../../common/hooks/useUser";
 import { LocalStorageKeys } from "../../common/variables/LocalStorageKeys";
-import { AuthenticationModalType, useAuthenticationModal } from "../../common/hooks/useAuthenticationModal";
 import { WebSocketService } from "../../service/WebSocketService";
+import { FindiffModalType, useFindiffModal } from "../../common/hooks/useFindiffModal";
 
 const MainPage = () => {
     // Buffer for incoming streamed content chunks
@@ -40,7 +40,7 @@ const MainPage = () => {
     // Unique ID for the current conversation thread
     const [conversationId, setConversationId] = useState<string>('');
     const {currentUser} = useUser();
-    const {setAuthenticationModal} = useAuthenticationModal();
+    const {setFindiffModal} = useFindiffModal();
     const remChats = localStorage.getItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING);
     const displaySignInBanner = !currentUser && remChats && parseInt(remChats) <= 0;
 
@@ -53,7 +53,7 @@ const MainPage = () => {
         if(!currentUser){
             if(remChats){
                 if(parseInt(remChats) <=0){
-                    setAuthenticationModal(AuthenticationModalType.SIGNIN);
+                    setFindiffModal(FindiffModalType.SIGNIN);
                     return;
                 }
                 localStorage.setItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING, (parseInt(remChats)-1).toString());
@@ -231,7 +231,7 @@ const MainPage = () => {
                                 <span className="font-semibold">You've reached your free chat limit. Sign in to continue using FinDiff!</span>
                             </div>
                             <button
-                                onClick={() => setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+                                onClick={() => setFindiffModal(FindiffModalType.SIGNIN)}
                                 className="bg-white text-blue-500 font-semibold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                             >
                                 Sign In

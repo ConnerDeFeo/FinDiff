@@ -8,10 +8,10 @@ import StockDisplay from "../../../common/component/display/StockDisplay";
 import SelectedDocuments from "./SelectedDocuments";
 import SectionSelection from "./SectionSelection";
 import type { Message } from "../../../common/types/Message";
-import { AuthenticationModalType, useAuthenticationModal } from "../../../common/hooks/useAuthenticationModal";
 import { useUser } from "../../../common/hooks/useUser";
 import { useNavigate } from "react-router-dom";
 import { WebSocketService } from "../../../service/WebSocketService";
+import { FindiffModalType, useFindiffModal } from "../../../common/hooks/useFindiffModal";
 
 
 const LeftSidebar = (
@@ -58,7 +58,7 @@ const LeftSidebar = (
     const [available10KFilings, setAvailable10KFilings] = useState<{accessionNumber:string, filingDate:string, primaryDocument:string}[]>([]);
     const [selectedSection, setSelectedSection] = useState<string>("");
     const [currentFilingSelection, setCurrentFilingSelection] = useState<string>('');
-    const { setAuthenticationModal } = useAuthenticationModal();
+    const { setFindiffModal } = useFindiffModal();
     const { currentUser } = useUser();
     const navigate = useNavigate();
     
@@ -212,7 +212,7 @@ const LeftSidebar = (
                                         <span className="font-semibold text-blue-700">Sign in</span> to view individual sections of 10-K filings.
                                     </p>
                                     <button
-                                        onClick={() => setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+                                        onClick={() => setFindiffModal(FindiffModalType.SIGNIN)}
                                         className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                                     >
                                         Sign In
@@ -229,7 +229,7 @@ const LeftSidebar = (
             </FinDiffButton>
             <button 
                 className="mt-auto h-[5%] w-65 flex items-center gap-x-2 border-t border-gray-200 cursor-pointer" 
-                onClick={currentUser ? ()=>navigate("/profile") : ()=>setAuthenticationModal(AuthenticationModalType.SIGNIN)}
+                onClick={currentUser ? ()=>navigate("/profile") : ()=>setFindiffModal(FindiffModalType.SIGNIN)}
             >
                 <img src="/images/UserAvatar.png" className="h-10 w-10 p-1 ml-4"/>
 
