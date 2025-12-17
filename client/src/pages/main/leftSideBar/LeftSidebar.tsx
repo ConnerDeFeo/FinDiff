@@ -121,6 +121,11 @@ const LeftSidebar = (
                 buffer.current += message.data;
                 websocket.close();
                 setAwaitingAnalysis(false);
+            } else if(message.type === WebSocketMessageType.FreeTierLimit) {
+                setChat(prev=>prev.splice(0, prev.length - 1))
+                setFindiffModal(FindiffModalType.GET_PREMIUM);
+                websocket.close();
+                setAwaitingAnalysis(false);
             }
         };
         

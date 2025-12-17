@@ -1,8 +1,10 @@
 import { createContext, useContext, useState } from "react";
 import SignUpModal from "../component/Modals/SignUpModal";
+import GetPremiumModal from "../component/Modals/GetPremiumModal";
 
 export enum FindiffModalType {
     SIGNIN = 'signin',
+    GET_PREMIUM = 'get_premium',
     NONE = 'none'
 };
 
@@ -26,6 +28,7 @@ export const FindiffModalProvider = ({ children }: { children: React.ReactNode }
         <FindiffModalContext.Provider value={{ findiffModal, setFindiffModal }}>
             {children}
             <SignUpModal isOpen={findiffModal === FindiffModalType.SIGNIN} onClose={() => setFindiffModal(FindiffModalType.NONE)} />
+            <GetPremiumModal isOpen={findiffModal === FindiffModalType.GET_PREMIUM} onClose={() => setFindiffModal(FindiffModalType.NONE)} />
         </FindiffModalContext.Provider>
     );
 };
