@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import SignUpModal from "../component/SignUpModal";
+import SignUpModal from "../component/Modals/SignUpModal";
 
 export enum FindiffModalType {
     SIGNIN = 'signin',
