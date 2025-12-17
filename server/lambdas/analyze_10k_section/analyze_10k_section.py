@@ -36,7 +36,7 @@ async def analyze_10k_section_async(event, context):
             if not can_access_features(claims.get("sub", "")):
                 apigateway.post_to_connection(
                     ConnectionId=connection_id,
-                    Data=json.dumps({'type': 'error', 'message': 'No actions left for today'})
+                    Data=json.dumps({'type': 'free_tier_limit', 'message': 'No actions left for today'})
                 )
                 return
 
