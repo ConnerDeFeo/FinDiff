@@ -2,6 +2,7 @@ import boto3
 from filings import *
 import asyncio
 import json
+from user_auth import authorize_token
 
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
@@ -22,6 +23,11 @@ async def analyze_10k_section_async(event, context):
         # Extract parameters from event
         stock = body['stock']
         section = body['section']
+        bearer_token = body.get("bearerToken")
+        print(f"Token received: {bearer_token}")
+        # Authorize user
+        if not authorize_token(bearer_token):
+            raise Exception("Unauthorized")
 
         # Extract filing details for first stock
         cik1 = stock['cik']

@@ -37,6 +37,7 @@ resource "aws_apigatewayv2_route" "lambda_routes" {
   api_id    = aws_apigatewayv2_api.web_socket_api.id
   route_key = each.value
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integrations[each.key].id}"
+  authorization_type = "NONE"
 }
 
 # Grant API Gateway permission to invoke Lambda functions

@@ -5,6 +5,7 @@ import asyncio
 from dynamo import put_item, query_items
 import uuid
 import time
+from user_auth import authorize_token
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
@@ -23,6 +24,10 @@ async def generate_multi_context_response_async(event, context):
         # Extract parameters from event
         stocks = body["stocks"] # {cik, accession, primaryDoc}[]
         prompt = body["prompt"]
+        bearer_token = body.get("bearerToken")
+        # Authorize user
+        if not authorize_token(bearer_token):
+            raise Exception("Unauthorized")
         conversation_id = body.get("conversationId")
 
         # create uuid if no conversation_id

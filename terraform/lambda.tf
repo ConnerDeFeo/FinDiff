@@ -4,7 +4,7 @@ locals {
     "compare_10k_filings" = {
       source_dir  = "../server/lambdas/compare_10k_filings"
       output_path = "../server/lambdas/zips/compare_10k_filings.zip"
-      layers      = ["filings"]
+      layers      = ["filings", "user_auth"]
     },
     "search_tickers" = {
       source_dir  = "../server/lambdas/search/search_tickers"
@@ -19,7 +19,7 @@ locals {
     "analyze_10k_section" = {
       source_dir  = "../server/lambdas/analyze_10k_section"
       output_path = "../server/lambdas/zips/analyze_10k_section.zip"
-      layers      = ["filings"]
+      layers      = ["filings", "user_auth"]
     },
     "cache_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/cache_available_10k_filings"
@@ -34,7 +34,7 @@ locals {
     "generate_multi_context_response" = {
       source_dir  = "../server/lambdas/generate_multi_context_response"
       output_path = "../server/lambdas/zips/generate_multi_context_response.zip"
-      layers      = ["filings", "dynamo"]
+      layers      = ["filings", "dynamo", "user_auth"]
     },
     "onConnect" = {
       source_dir  = "../server/lambdas/websocket/onConnect"
@@ -105,11 +105,6 @@ locals {
       source_dir  = "../server/lambdas/stripe/stripe_subscription_canceled_webhook"
       output_path = "../server/lambdas/stripe/zips/stripe_subscription_canceled_webhook.zip"
       layers      = ["dynamo", "utils"]
-    },
-    "findiff_lambda_authorizer" = {
-      source_dir  = "../server/lambdas/findiff_lambda_authorizer"
-      output_path = "../server/lambdas/zips/findiff_lambda_authorizer.zip"
-      layers      = ["utils"]
     }
   }
   layers = {

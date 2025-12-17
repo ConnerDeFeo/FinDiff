@@ -2,6 +2,7 @@ import boto3
 import asyncio
 from filings import get_10k_section_async
 import json
+from user_auth import authorize_token
 
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
@@ -31,6 +32,10 @@ async def compare_10k_filings_async(event, context):
         stock1 = body['stock1']
         stock2 = body['stock2']
         section = body['section']
+        bearer_token = body.get("bearerToken")
+        # Authorize user
+        if not authorize_token(bearer_token):
+            raise Exception("Unauthorized")
 
         # Extract filing details for first stock
         cik1 = stock1['cik']

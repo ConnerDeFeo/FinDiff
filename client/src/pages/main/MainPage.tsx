@@ -75,7 +75,7 @@ const MainPage = () => {
             setAnalysisMode('chatbot');
         
             // Create WebSocket connection on-demand
-            const websocket = await WebSocketService.createSecureWebSocket();
+            const websocket = WebSocketService.createWebSocket();
             
             // Build payload based on number of selected documents
             const payload = selectedDocuments.length === 1 ? {
@@ -102,8 +102,7 @@ const MainPage = () => {
             websocket.onopen = () => {
                 console.log("WebSocket connection opened");
                 setDisableSendButton(true);
-                // Add empty assistant message that will be populated with streamed content
-                websocket.send(JSON.stringify(payload));
+                WebSocketService.sendMessage(websocket, payload);
             };
             
             // Handle incoming messages from WebSocket

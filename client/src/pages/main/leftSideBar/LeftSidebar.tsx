@@ -103,11 +103,10 @@ const LeftSidebar = (
                 section: selectedSection,
             }
         }
-        const websocket = await WebSocketService.createSecureWebSocket();;
+        const websocket = WebSocketService.createWebSocket();
         websocket.onopen = () => {
-            console.log("WebSocket connection opened");
             setChat(prev=>[...prev, { role: MessageRole.Assistant, content: "", section: selectedSection.replaceAll('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}]);
-            websocket.send(JSON.stringify(data));
+            WebSocketService.sendMessage(websocket, data);
         };
 
         websocket.onmessage = (event) => {

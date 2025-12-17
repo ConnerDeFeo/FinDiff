@@ -35,7 +35,7 @@ const SelectedDocuments = (
     const {currentUser} = useUser();
 
     const uploadDocument = async (filing: {accessionNumber:string, filingDate:string, primaryDocument:string}) => {
-        const websocket = await WebSocketService.createSecureWebSocket();
+        const websocket = WebSocketService.createWebSocket();
         websocket.onopen = () => {
             console.log(`Uploading document for filing date: ${filing.filingDate}`);
             setDisableSendButton(true);
@@ -43,12 +43,12 @@ const SelectedDocuments = (
                 ...prev,
                 [filing.filingDate]: { completed: 0, total: 1 }
             }));
-            websocket.send(JSON.stringify({
+            WebSocketService.sendMessage(websocket, {
                 action: 'upload_document',
                 cik: selectedCik,
                 accession: filing.accessionNumber,
                 primaryDoc: filing.primaryDocument,
-            }));
+            });
         }
 
         websocket.onmessage = (event) => {
