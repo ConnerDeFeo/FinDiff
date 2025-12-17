@@ -20,8 +20,7 @@ def authorize_token(token):
         # Find the correct key
         key = next((k for k in keys if k['kid'] == kid), None)
         if not key:
-            print("Public key not found in JWKs")
-            return False
+            return None
         
         # Verify and decode token
         decoded = jwt.decode(
@@ -33,13 +32,11 @@ def authorize_token(token):
             options={'verify_at_hash': False}
         )
         
-        print(f"Token validated for user: {decoded['sub']}")
-        
-        return True
+        return decoded
         
     except Exception as e:
         print(f"Authorization failed: {str(e)}")
-        return False
+        return None
 
 
 get_auth_header = {

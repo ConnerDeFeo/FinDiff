@@ -76,6 +76,11 @@ locals {
       output_path = "../server/lambdas/cognito/zips/pre_sign_up.zip"
       layers      = []
     },
+    "pre_token_generation" = {
+      source_dir  = "../server/lambdas/cognito/pre_token_generation"
+      output_path = "../server/lambdas/cognito/zips/pre_token_generation.zip"
+      layers      = ["dynamo"]
+    },
     "create_checkout_session" = {
       source_dir  = "../server/lambdas/stripe/create_checkout_session"
       output_path = "../server/lambdas/stripe/zips/create_checkout_session.zip"

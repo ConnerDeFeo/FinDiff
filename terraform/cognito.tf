@@ -10,6 +10,7 @@ resource "aws_cognito_user_pool" "main" {
         create_auth_challenge           = aws_lambda_function.lambdas["create_auth_challenge"].arn
         verify_auth_challenge_response  = aws_lambda_function.lambdas["verify_auth_challenge"].arn
         pre_sign_up                     = aws_lambda_function.lambdas["pre_sign_up"].arn
+        pre_token_generation            = aws_lambda_function.lambdas["pre_token_generation"].arn
     }
 
     password_policy {

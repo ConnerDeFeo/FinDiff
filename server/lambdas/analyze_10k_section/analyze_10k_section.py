@@ -24,7 +24,6 @@ async def analyze_10k_section_async(event, context):
         stock = body['stock']
         section = body['section']
         bearer_token = body.get("bearerToken")
-        print(f"Token received: {bearer_token}")
         # Authorize user
         if not authorize_token(bearer_token):
             raise Exception("Unauthorized")
