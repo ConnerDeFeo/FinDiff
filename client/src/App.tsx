@@ -9,7 +9,7 @@ import Cancel from "./pages/stripe/Cancel";
 import SubscriptionManager from "./pages/SubscriptionManager";
 import stripeService from "./service/StripeService";
 import { useEffect } from "react";
-import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
+import { fetchUserAttributes } from "aws-amplify/auth";
 
 
 function App() {
@@ -20,9 +20,6 @@ function App() {
       const resp = await stripeService.checkSubscription();
       const currentUser = await fetchUserAttributes();
       currentUser.email = currentUser.email?.toLowerCase();
-      const session = await fetchAuthSession();
-      const accessToken = session.tokens?.idToken?.toString();  
-      console.log("Access Token:", accessToken);
       if(resp.ok){
         const data = await resp.json();
         setCurrentUser({

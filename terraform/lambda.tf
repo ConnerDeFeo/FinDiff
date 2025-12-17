@@ -4,7 +4,7 @@ locals {
     "compare_10k_filings" = {
       source_dir  = "../server/lambdas/compare_10k_filings"
       output_path = "../server/lambdas/zips/compare_10k_filings.zip"
-      layers      = ["filings", "user_auth"]
+      layers      = ["filings", "user_auth", "dynamo"]
     },
     "search_tickers" = {
       source_dir  = "../server/lambdas/search/search_tickers"
@@ -19,7 +19,7 @@ locals {
     "analyze_10k_section" = {
       source_dir  = "../server/lambdas/analyze_10k_section"
       output_path = "../server/lambdas/zips/analyze_10k_section.zip"
-      layers      = ["filings", "user_auth"]
+      layers      = ["filings", "user_auth", "dynamo"]
     },
     "cache_available_10k_filings" = {
       source_dir  = "../server/lambdas/search/cache_available_10k_filings"
@@ -29,7 +29,7 @@ locals {
     "generate_response" = {
       source_dir  = "../server/lambdas/generate_response"
       output_path = "../server/lambdas/zips/generate_response.zip"
-      layers      = ["filings", "dynamo"]
+      layers      = ["filings", "dynamo", "user_auth"]
     },
     "generate_multi_context_response" = {
       source_dir  = "../server/lambdas/generate_multi_context_response"

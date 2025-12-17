@@ -3,6 +3,7 @@ import asyncio
 from filings import get_10k_section_async
 import json
 from user_auth import authorize_token
+from dynamo import can_access_features
 
 # Configuration constants
 MAX_SECTION_TOKENS = 100000  # Maximum tokens per section before splitting
@@ -34,8 +35,19 @@ async def compare_10k_filings_async(event, context):
         section = body['section']
         bearer_token = body.get("bearerToken")
         # Authorize user
-        if not authorize_token(bearer_token):
+        claims = authorize_token(bearer_token)
+        if not claims:
             raise Exception("Unauthorized")
+        
+
+        # Check dynamo to see if they have any actions left should they not be premium
+        if claims.get("custom:isPremium") != "true":
+            if not can_access_features(claims.get("sub", "")):
+                apigateway.post_to_connection(
+                    ConnectionId=connection_id,
+                    Data=json.dumps({'type': 'error', 'message': 'No actions left for today'})
+                )
+                return
 
         # Extract filing details for first stock
         cik1 = stock1['cik']

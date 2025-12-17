@@ -4,7 +4,8 @@ import boto3
 import asyncio
 import uuid
 import time
-from dynamo import query_items, put_item
+from dynamo import query_items, put_item, can_access_features
+from user_auth import authorize_token
 
 OUTPUT_TOKENS = 8000  # Maximum output tokens for Bedrock responses
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-2')
@@ -25,7 +26,19 @@ async def generate_response_async(event, context):
         accession = body["accession"]
         primaryDoc = body["primaryDoc"]
         prompt = body["prompt"]
+        bearer_token = body.get("bearerToken")
         conversation_id = body.get("conversationId")
+
+        if bearer_token:
+            claims = authorize_token(bearer_token)
+            # Check dynamo to see if they have any actions left should they not be premium
+            if claims and claims.get("custom:isPremium") != "true":
+                if not can_access_features(claims.get("sub", "")):
+                    apigateway.post_to_connection(
+                        ConnectionId=connection_id,
+                        Data=json.dumps({'type': 'error', 'message': 'No actions left for today'})
+                    )
+                    return
 
         # create uuid if no conversation_id
         if not conversation_id:

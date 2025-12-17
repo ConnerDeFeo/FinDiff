@@ -2,7 +2,7 @@ import json
 from filings import get_multiple_10k_sections_async, get_relevant_sections
 import boto3
 import asyncio
-from dynamo import put_item, query_items
+from dynamo import put_item, query_items, can_access_features
 import uuid
 import time
 from user_auth import authorize_token
@@ -26,8 +26,19 @@ async def generate_multi_context_response_async(event, context):
         prompt = body["prompt"]
         bearer_token = body.get("bearerToken")
         # Authorize user
-        if not authorize_token(bearer_token):
+        claims = authorize_token(bearer_token)
+        if not claims:
             raise Exception("Unauthorized")
+        
+
+        # Check dynamo to see if they have any actions left should they not be premium
+        if claims.get("custom:isPremium") != "true":
+            if not can_access_features(claims.get("sub", "")):
+                apigateway.post_to_connection(
+                    ConnectionId=connection_id,
+                    Data=json.dumps({'type': 'error', 'message': 'No actions left for today'})
+                )
+                return
         conversation_id = body.get("conversationId")
 
         # create uuid if no conversation_id
