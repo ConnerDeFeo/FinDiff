@@ -255,12 +255,9 @@ const LeftSidebar = (
                                     <p className="text-sm text-center text-gray-700 mb-2">
                                         <span className="font-semibold text-blue-700">Sign in</span> to view individual sections of 10-K filings.
                                     </p>
-                                    <button
-                                        onClick={() => setFindiffModal(FindiffModalType.SIGNIN)}
-                                        className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                                    >
+                                    <FinDiffButton onClick={() => setFindiffModal(FindiffModalType.SIGNIN)} className="w-full">
                                         Sign In
-                                    </button>
+                                    </FinDiffButton>
                                 </div>
                             )}
                         </div>
