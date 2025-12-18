@@ -5,7 +5,7 @@ from user_auth import get_auth_header
 # Check if the current user is subscribed to a plan
 def check_subscription(event, context):
     try:
-        user_id = event['requestContext']['authorizer']['claims']['sub']
+        user_id = event['requestContext']['authorizer']['claims']['email']
 
         # Get the sub data from dynamo
         user_data = get_item(

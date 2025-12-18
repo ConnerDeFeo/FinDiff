@@ -6,33 +6,14 @@ import Profile from "./pages/Profile";
 import Success from "./pages/stripe/Sucess";
 import Cancel from "./pages/stripe/Cancel";
 import SubscriptionManager from "./pages/SubscriptionManager";
-import stripeService from "./service/StripeService";
 import { useEffect } from "react";
-import { fetchUserAttributes } from "aws-amplify/auth";
 import { FindiffModalProvider } from "./common/hooks/useFindiffModal";
 
 
 function App() {
-  const { setCurrentUser } = useUser();
+  const { fetchUser } = useUser();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const resp = await stripeService.checkSubscription();
-      const currentUser = await fetchUserAttributes();
-      currentUser.email = currentUser.email?.toLowerCase();
-      if(resp.ok){
-        const data = await resp.json();
-        setCurrentUser({
-          email: currentUser.email!, 
-          premium: data.subscription_active, 
-          nextBillingDate: data.next_billing_date, 
-          cancelAtPeriodEnd: data.cancel_at_period_end
-        });
-      }
-      else{
-        setCurrentUser({email: currentUser.email!, premium: false} );
-      }
-    };
     fetchUser();
   }, []);
 

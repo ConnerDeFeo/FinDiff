@@ -9,7 +9,7 @@ stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 
 def create_portal_session(event, context):
     try:
-        user_id = event['requestContext']['authorizer']['claims']['sub']
+        user_id = event['requestContext']['authorizer']['claims']['email']
 
         user = get_item("user_details", {"user_id": user_id})
 

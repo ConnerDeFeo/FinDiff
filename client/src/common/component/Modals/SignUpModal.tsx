@@ -2,12 +2,14 @@ import { useState } from "react";
 import FinDiffButton from "../FinDiffButton";
 import { signIn, signUp, confirmSignIn, signInWithRedirect} from 'aws-amplify/auth';
 import Modal from "./Modal";
+import { useUser } from "../../hooks/useUser";
 
 const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
     const [email, setEmail] = useState<string>('');
     const [verificationCode, setVerificationCode] = useState<string>('');
     const [isVerifying, setIsVerifying] = useState<boolean>(false);
+    const {fetchUser} = useUser();
 
     const handleSSOClick = async () => {
         try{
@@ -39,6 +41,7 @@ const SignUpModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
         const result = await confirmSignIn({
             challengeResponse: verificationCode
         });
+        await fetchUser();
         if(result.isSignedIn){
             onClose();
         }

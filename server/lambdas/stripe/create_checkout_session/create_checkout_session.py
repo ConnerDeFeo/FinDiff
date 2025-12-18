@@ -8,7 +8,7 @@ PRICE_ID = os.environ["FINDIFF_PREMIUM_PRICE_KEY"]
 
 def create_checkout_session(event, context):
     try:
-        user_id = event['requestContext']['authorizer']['claims']['sub']
+        user_id = event['requestContext']['authorizer']['claims']['email']
         session = stripe.checkout.Session.create(
             mode="subscription",
             line_items=[{"price": PRICE_ID, "quantity": 1}],

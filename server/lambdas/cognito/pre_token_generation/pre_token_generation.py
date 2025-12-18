@@ -2,7 +2,7 @@ from dynamo import get_item
 
 def pre_token_generation(event, context):
     is_premium = False
-    user_id = event["request"]["userAttributes"]["sub"]
+    user_id = event["request"]["userAttributes"]["email"]
     item = get_item("user_details", {"user_id": user_id} )
     print("DynamoDB item:", item)
     if item and item.get("subscription_status") == "active":

@@ -5,10 +5,11 @@ import { useUser } from "../common/hooks/useUser";
 
 const Profile = () => {
     const navigate = useNavigate(); 
-    const {currentUser} = useUser();
+    const {currentUser, setCurrentUser} = useUser();
     
     const handleSignOut = async () => {
         await signOut();
+        setCurrentUser(null);
         navigate("/");
     }
 

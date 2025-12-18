@@ -157,3 +157,32 @@ resource "aws_lambda_permission" "allow_cognito" {
   principal     = "cognito-idp.amazonaws.com"
   source_arn    = aws_cognito_user_pool.main.arn
 }
+
+# Allow lambda to access cognito
+resource "aws_iam_role_policy" "lambda_cognito" {
+  name = "lambda_cognito_policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:ListUsers",
+          "cognito-idp:AdminLinkProviderForUser"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
