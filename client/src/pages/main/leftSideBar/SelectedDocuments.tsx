@@ -10,8 +10,6 @@ const SelectedDocuments = (
         selectedDocuments, 
         awaitingAnalysis, 
         available10KFilings, 
-        currentFilingSelection, 
-        setCurrentFilingSelection, 
         setSelectedDocuments, 
         selectedCik,
         setDisableSendButton
@@ -20,8 +18,6 @@ const SelectedDocuments = (
         selectedDocuments: Array<{year: string; filingDate: string; accessionNumber: string; primaryDocument: string}>;
         awaitingAnalysis: boolean;
         available10KFilings: {accessionNumber:string, filingDate:string, primaryDocument:string}[];
-        currentFilingSelection: string;
-        setCurrentFilingSelection: React.Dispatch<React.SetStateAction<string>>;
         setSelectedDocuments: React.Dispatch<React.SetStateAction<{
             filingDate: string;
             accessionNumber: string;
@@ -94,10 +90,16 @@ const SelectedDocuments = (
         }
     }
 
-    const addDocument = async () => {
+    const addDocument = async (selectedFiling: string) => {
         const maxDocuments = currentUser ? 2 : 1;
-        if (!currentFilingSelection || selectedDocuments.length >= maxDocuments) return;
-        const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === currentFilingSelection);
+        if (!selectedFiling || selectedDocuments.length >= maxDocuments) return;
+        const filing = available10KFilings.find(f => f.filingDate.split('-')[0] === selectedFiling);
+        setSelectedDocuments([...selectedDocuments, {
+            filingDate: filing!.filingDate,
+            accessionNumber: filing!.accessionNumber,
+            primaryDocument: filing!.primaryDocument,
+            year: filing!.filingDate.split('-')[0]
+        }]);
         const resp = await secService.checkDocumentProcessed(
             selectedCik,
             filing!.accessionNumber,
@@ -106,14 +108,6 @@ const SelectedDocuments = (
         if(!resp.ok) return;
         const data = await resp.json();
         if(!data.processed) uploadDocument(filing!);
-        
-        setSelectedDocuments([...selectedDocuments, {
-            filingDate: filing!.filingDate,
-            accessionNumber: filing!.accessionNumber,
-            primaryDocument: filing!.primaryDocument,
-            year: filing!.filingDate.split('-')[0]
-        }]);
-        setCurrentFilingSelection('');
     };
 
     const removeDocument = (filingDate: string) => {
@@ -182,18 +176,11 @@ const SelectedDocuments = (
                             options={available10KFilings
                                 .filter(filing => !selectedDocuments.some(doc => doc.filingDate === filing.filingDate))
                                 .map(filing => filing.filingDate.split('-')[0])}
-                            value={currentFilingSelection}
-                            onChange={setCurrentFilingSelection}
+                            value={""}
+                            onChange={e=>addDocument(e)}
                             placeholder="Select a filing"
                             disabled={awaitingAnalysis}
                         />
-                        <button
-                            onClick={addDocument}
-                            disabled={!currentFilingSelection || awaitingAnalysis}
-                            className="cursor-pointer px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Add
-                        </button>
                     </div>
                     <p className="text-xs text-gray-500">
                         {selectedDocuments.length === 0 

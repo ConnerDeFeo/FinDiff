@@ -9,10 +9,6 @@ const StockDisplay = ({selectedStock}:{selectedStock: Stock}) => {
                     <span className="font-semibold findiff-primary-blue">Ticker:</span> 
                     <span className="ml-2 px-2 py-1 bg-blue-100 findiff-primary-blue rounded text-xs font-mono">{selectedStock.ticker}</span>
                 </p>
-                <p className="text-sm text-gray-700">
-                    <span className="font-semibold findiff-primary-blue">CIK:</span> 
-                    <span className="ml-2 font-mono text-xs text-gray-600">{selectedStock.cik_str}</span>
-                </p>
             </div>
         </div>
     );

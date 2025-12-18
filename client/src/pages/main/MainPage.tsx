@@ -41,6 +41,7 @@ const MainPage = () => {
     const [conversationId, setConversationId] = useState<string>('');
     const {currentUser} = useUser();
     const {setFindiffModal} = useFindiffModal();
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const remChats = localStorage.getItem(LocalStorageKeys.NO_SIGN_IN_CHATS_REMAINING);
     const displaySignInBanner = !currentUser && remChats && parseInt(remChats) <= 0;
 
@@ -50,6 +51,7 @@ const MainPage = () => {
      */
     const handlePromptSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e) e.preventDefault(); // Prevent newline on enter key press
+        if(textareaRef.current) textareaRef.current.style.height = 'auto';
         if(!currentUser){
             if(remChats){
                 if(parseInt(remChats) <=0){
@@ -285,14 +287,16 @@ const MainPage = () => {
                         value={userInput}
                         onChange={(e) => {
                             setUserInput(e.target.value);
-                            // Auto-resize textarea
+                            const minHeight = 48;
+                            const maxHeight = 200;
                             e.target.style.height = 'auto';
-                            e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                            e.target.style.height = Math.min(Math.max(e.target.scrollHeight, minHeight), maxHeight) + 'px';
                         }}
                         placeholder="Type your message here..."
                         className="block w-full p-3 border-transparent resize-none rounded-lg focus:outline-none overflow-y-auto min-h-12 max-h-50"
                         rows={1}
                         onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton) ? handlePromptSubmit(e) : undefined}
+                        ref={textareaRef}
                     />
                     <div className="relative h-10">
                         {/* Send button positioned in bottom-right of textarea */}

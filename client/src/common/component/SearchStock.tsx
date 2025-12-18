@@ -71,7 +71,6 @@ const SearchStock : React.FC<{onSelect: (stock: Stock) => void}> = ({ onSelect }
     return(
         <div className="relative">
             <h2>Search Ticker Symbol</h2>
-            
             {/* Search input with icon */}
             <div className="relative">
                 <input
