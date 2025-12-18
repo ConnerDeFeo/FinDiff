@@ -133,7 +133,7 @@ const FindiffDropDown = ({
                     key={`${option}-${index}`}
                     type="button"
                     onClick={() => handleSelect(option)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors border-b border-gray-200 ${
                       option === value ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-900'
                     }
                     ${specialOptions.has(option) ? 'font-bold' : ''}
