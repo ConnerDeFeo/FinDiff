@@ -15,7 +15,7 @@ def create_portal_session(event, context):
 
         session = stripe.billing_portal.Session.create(
             customer=user["stripe_customer_id"],
-            return_url="http://localhost:5173/subscription-manager"
+            return_url="http://findiff.com/subscription-manager"
         )
 
         return {

@@ -172,8 +172,8 @@ resource "aws_lambda_function" "lambdas" {
 
   environment {
     variables = {
-      STRIPE_SECRET_KEY         = var.stripe_test_secret_key
-      FINDIFF_PREMIUM_PRICE_KEY = var.findiff_test_premium_price_key
+      STRIPE_SECRET_KEY         = var.stripe_secret_key
+      FINDIFF_PREMIUM_PRICE_KEY = var.findiff_premium_price_key
       STRIPE_COMPLETED_CHECKOUT_WEBHOOK_SECRET     = var.stripe_completed_checkout_webhook_secret
       STRIPE_SUBSCRIPTION_ENDED_WEBHOOK_SECRET     = var.stripe_subscription_ended_webhook_secret
       STRIPE_SUBSCRIPTION_CANCELED_WEBHOOK_SECRET  = var.stripe_subscription_canceled_webhook_secret

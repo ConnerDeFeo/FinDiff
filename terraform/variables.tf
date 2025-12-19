@@ -15,9 +15,23 @@ variable "stripe_secret_key" {
   type        = string
   sensitive   = true
 }
-
 variable "findiff_premium_price_key" {
   description = "Stripe Price Key for FinDiff Premium subscription"
+  type        = string
+  sensitive   = true
+}
+variable "stripe_completed_checkout_webhook_secret" {
+  description = "Stripe Webhook Secret for verifying webhook signatures"
+  type        = string
+  sensitive   = true
+}
+variable "stripe_subscription_ended_webhook_secret" {
+  description = "Stripe Webhook Secret for verifying subscription ended webhook signatures"
+  type        = string
+  sensitive   = true
+}
+variable "stripe_subscription_canceled_webhook_secret" {
+  description = "Stripe Webhook Secret for verifying subscription canceled webhook signatures"
   type        = string
   sensitive   = true
 }
@@ -27,26 +41,22 @@ variable "stripe_test_secret_key" {
   type        = string
   sensitive   = true
 }
-
 variable "findiff_test_premium_price_key" {
   description = "Stripe Test Price Key for FinDiff Premium subscription in test environments"
   type        = string
   sensitive   = true
 }
-
-variable "stripe_completed_checkout_webhook_secret" {
+variable "stripe_test_completed_checkout_webhook_secret" {
   description = "Stripe Webhook Secret for verifying webhook signatures"
   type        = string
   sensitive   = true
 }
-
-variable "stripe_subscription_ended_webhook_secret" {
+variable "stripe_test_subscription_ended_webhook_secret" {
   description = "Stripe Webhook Secret for verifying subscription ended webhook signatures"
   type        = string
   sensitive   = true
 }
-
-variable "stripe_subscription_canceled_webhook_secret" {
+variable "stripe_test_subscription_canceled_webhook_secret" {
   description = "Stripe Webhook Secret for verifying subscription canceled webhook signatures"
   type        = string
   sensitive   = true
