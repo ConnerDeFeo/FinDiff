@@ -295,7 +295,7 @@ const MainPage = () => {
                         placeholder="Type your message here..."
                         className="block w-full p-3 border-transparent resize-none rounded-lg focus:outline-none overflow-y-auto min-h-12 max-h-50"
                         rows={1}
-                        onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton) ? handlePromptSubmit(e) : undefined}
+                        onKeyDown={e => (e.key === "Enter" && !e.shiftKey && !disableSendButton && userInput.trim() && selectedDocuments.length > 0 && !awaitingAnalysis && buffer.current.length === 0) ? handlePromptSubmit(e) : undefined}
                         ref={textareaRef}
                     />
                     <div className="relative h-10">
