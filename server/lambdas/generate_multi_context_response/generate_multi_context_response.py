@@ -26,19 +26,19 @@ async def generate_multi_context_response_async(event, context):
         prompt = body["prompt"]
         bearer_token = body.get("bearerToken")
         # Authorize user
-        claims = authorize_token(bearer_token)
-        if not claims:
-            raise Exception("Unauthorized")
+        # claims = authorize_token(bearer_token)
+        # if not claims:
+        #     raise Exception("Unauthorized")
         
 
-        # Check dynamo to see if they have any actions left should they not be premium
-        if claims.get("custom:isPremium") != "true":
-            if not can_access_features(claims.get("sub", "")):
-                apigateway.post_to_connection(
-                    ConnectionId=connection_id,
-                    Data=json.dumps({'type': 'free_tier_limit', 'message': 'No actions left for today'})
-                )
-                return
+        # # Check dynamo to see if they have any actions left should they not be premium
+        # if claims.get("custom:isPremium") != "true":
+        #     if not can_access_features(claims.get("sub", "")):
+        #         apigateway.post_to_connection(
+        #             ConnectionId=connection_id,
+        #             Data=json.dumps({'type': 'free_tier_limit', 'message': 'No actions left for today'})
+        #         )
+        #         return
         conversation_id = body.get("conversationId")
 
         # create uuid if no conversation_id
