@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import type { User } from "../types/User";
-import stripeService from "../../service/StripeService";
-import { fetchUserAttributes } from "aws-amplify/auth";
+// import stripeService from "../../service/StripeService";
+// import { fetchUserAttributes } from "aws-amplify/auth";
 
 export const useUserContext = createContext<{
     currentUser: User | null,
