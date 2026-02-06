@@ -29,16 +29,16 @@ async def generate_response_async(event, context):
         bearer_token = body.get("bearerToken")
         conversation_id = body.get("conversationId")
 
-        if bearer_token:
-            claims = authorize_token(bearer_token)
-            # Check dynamo to see if they have any actions left should they not be premium
-            if claims and claims.get("custom:isPremium") != "true":
-                if not can_access_features(claims.get("sub", "")):
-                    apigateway.post_to_connection(
-                        ConnectionId=connection_id,
-                        Data=json.dumps({'type': 'free_tier_limit', 'message': 'No actions left for today'})
-                    )
-                    return
+        # if bearer_token:
+        #     claims = authorize_token(bearer_token)
+        #     # Check dynamo to see if they have any actions left should they not be premium
+        #     if claims and claims.get("custom:isPremium") != "true":
+        #         if not can_access_features(claims.get("sub", "")):
+        #             apigateway.post_to_connection(
+        #                 ConnectionId=connection_id,
+        #                 Data=json.dumps({'type': 'free_tier_limit', 'message': 'No actions left for today'})
+        #             )
+        #             return
 
         # create uuid if no conversation_id
         if not conversation_id:
